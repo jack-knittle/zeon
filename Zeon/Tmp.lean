@@ -18,7 +18,7 @@ lemma baz {F : Type*} [Field F] (x : F) : x + 0 = x := by
 /-
 add_zero.{u} {M : Type u} [AddZeroClass M] (a : M) : a + 0 = a
 -/
-#check add_zero
+#check id
 
 -- square brackets are for *type class* arguments
 -- these Lean tries to infer automatically
