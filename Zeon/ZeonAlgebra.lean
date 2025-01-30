@@ -8,16 +8,11 @@ open MvPolynomial
 
 def ZeonAlgebra := MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}
 
-instance : CommMonoid (ZeonAlgebra σ R) :=
-  inferInstanceAs (CommMonoid (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
-
-instance : Ring (ZeonAlgebra σ R) :=
-  inferInstanceAs (Ring (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
+instance : CommRing (ZeonAlgebra σ R) :=
+  inferInstanceAs (CommRing (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
 
 instance : Algebra R (ZeonAlgebra σ R) :=
   inferInstanceAs (Algebra R (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
-
-namespace ZeonAlgebra
 
 variable {σ R}
 
@@ -36,43 +31,47 @@ lemma gen_pow (n : σ) (k : ℕ) (hk : k ≥ 2) : (generator n (R := R)) ^ k = 0
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hk
   rw [pow_add, gen_sq, zero_mul]
 
+
+lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → ZeonAlgebra σ R)) = ⊤ := by
+  -- this should be true because the generators are the images of the `X i` polynomials
+  -- under the quotient map, and these polynomials span the `MvPolynomial` ring.
+  sorry
+
 /- unnecessary -/
 @[simp]
 lemma gen_even (n : σ) (k : ℕ) (hk : k ≠ 0): (generator (R := R) n) ^ (2 * k) = 0 := by
   rw [pow_mul, gen_sq, zero_pow hk]
 
-/- ? -/
-lemma gen_mul_comm (n m : σ) : generator (R := R) n * generator m = generator m * generator n := by
-  simp [mul_comm]
-
-lemma gen_add_comm (n m : σ) : generator (R := R) n + generator m = generator m + generator n := by
-  simp [add_comm]
-
-lemma gen_add_assoc (n m k : σ) : generator (R := R) n + generator m + generator k = generator n + (generator m + generator k) := by
-  simp [add_assoc]
-
-lemma gen_mul_assoc (n m k : σ) : generator (R := R) n * generator m * generator k = generator n * (generator m * generator k) := by
-  simp [mul_assoc]
-
 def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
+
+lemma blade_empty : blade (R := R) (∅ : Finset σ) = 1 := by
+  simp only [blade, Finset.prod_empty]
 
 lemma blade_sq (s : Finset σ) (hs : s ≠ ∅) : blade (R := R) s ^ 2 = 0 := by
   obtain ⟨i, hi⟩ := Finset.nonempty_of_ne_empty hs
-  rw [blade, ←Finset.prod_pow, Finset.prod_eq_zero hi (gen_sq i), zero_mul]
-  sorry
+  rw [blade, ←Finset.prod_pow, Finset.prod_eq_zero hi (gen_sq i)]
 
+-- you should phrase `hs` as `s.Nonempty`.
 lemma blade_pow (s : Finset σ) (k : ℕ) (hk : k ≥ 2) (hs : s ≠ ∅) : blade (R := R) s ^ k = 0 := by
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hk
   rw [pow_add, blade_sq s hs, zero_mul]
 
+variable [DecidableEq σ]
+
 /- Not sure if I need two lemmas here or if it can be fit into one -/
-lemma blade_prod_disjoint (s t : Finset σ) (hst : s ∪ t = ∅): blade (R := R) s * blade t = blade (s ∪ t) := by
+lemma blade_prod_disjoint (s t : Finset σ)  (hst : s ∪ t = ∅): blade (R := R) s * blade t = blade (s ∪ t) := by
   sorry
 
 lemma blade_prod_inter (s t : Finset σ) (hst : s ∪ t ≠ ∅): blade (R := R) s * blade t = 0 := by
   sorry
 
+-- After this we'll want to turn it into a basis using `Basis.mk`, but we'll need to prove linear independence using `LinearIndependent.map`.
+-- `MvPolynomial.linearIndependent_X`
 lemma blade_span (s : Finset σ) : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) = ⊤ := by
+  -- this should follow from `adjoin_generators` and the fact that the blades are products of the generators
+  -- We want to claim that if `s` is a set closed under multiplication, then so is `span s`, and then we apply
+  -- `Submodule.toSubalgebra` to get a subalgebra containing the blades, which hence also contains the generators.
+  -- this must be bigger than `Algebra.adjoin R (Set.range (generator : σ → ZeonAlgebra σ R))`, which is the whole algebra.
   sorry
 
 /- This is wrong but maybe sort of close -/
