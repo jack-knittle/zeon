@@ -8,6 +8,8 @@ open MvPolynomial
 
 def ZeonAlgebra := MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}
 
+namespace ZeonAlgebra
+
 instance : CommRing (ZeonAlgebra σ R) :=
   inferInstanceAs (CommRing (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
 
@@ -16,29 +18,38 @@ instance : Algebra R (ZeonAlgebra σ R) :=
 
 variable {σ R}
 
-def generator (n : σ) : ZeonAlgebra σ R := Ideal.Quotient.mk _ (X n)
+def mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R := Ideal.Quotient.mkₐ _ _
+
+lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R) = Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} :=
+  Ideal.Quotient.mkₐ_ker R _
+
+lemma mk_surjective : Function.Surjective (mk : MvPolynomial σ R → ZeonAlgebra σ R) :=
+  Ideal.Quotient.mkₐ_surjective R _
+
+def generator (n : σ) : ZeonAlgebra σ R := mk (X n)
 
 @[simp]
 lemma gen_sq (n : σ) : (generator n (R := R)) ^ 2 = 0 := by
   have h : (X n ^ 2 : MvPolynomial σ R) ∈ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} := by
     apply Ideal.subset_span
     use n
-  rw [generator, ←RingHom.map_pow (Ideal.Quotient.mk (Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)})) (X n)]
-  exact Ideal.Quotient.eq_zero_iff_mem.2 h
+  rwa [generator, ← map_pow, ← RingHom.mem_ker, ker_mk]
 
 @[simp]
 lemma gen_pow (n : σ) (k : ℕ) (hk : k ≥ 2) : (generator n (R := R)) ^ k = 0 := by
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hk
   rw [pow_add, gen_sq, zero_mul]
 
+variable (n : ℕ)
 
 lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → ZeonAlgebra σ R)) = ⊤ := by
-  have h : Set.range (generator : σ → ZeonAlgebra σ R) = Set.range (Ideal.Quotient.mk _ ∘ X) := by
+  have h : Set.range (generator : σ → ZeonAlgebra σ R) = Set.range (mk ∘ X) := by
     unfold generator
     ext x
     simp only [Set.mem_range, Function.comp_apply]
-  rw [h, Set.range_comp, Algebra.adjoin_image (Ideal.Quotient.mk (Ideal.span {x | ∃ i, X i ^ 2 = x}) : MvPolynomial σ R →ₐ[R] Subalgebra R (ZeonAlgebra σ R)) (Set.range X : Set (MvPolynomial σ R)), MvPolynomial.adjoin_range_X]
-  sorry
+  rw [h, Set.range_comp, Algebra.adjoin_image, MvPolynomial.adjoin_range_X]
+  rw [Algebra.map_top, AlgHom.range_eq_top]
+  exact mk_surjective
 
 def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
 
@@ -55,18 +66,23 @@ lemma blade_pow (s : Finset σ) (k : ℕ) (hk : k ≥ 2) (hs : s.Nonempty) : bla
 
 variable [DecidableEq σ]
 
-lemma blade_prod_disjoint (s t : Finset σ)  (hst : Disjoint s t): blade (R := R) s * blade t = blade (s ∪ t) := by
+lemma blade_mul_disjoint (s t : Finset σ)  (hst : Disjoint s t): blade (R := R) s * blade t = blade (s ∪ t) := by
   rw [blade, blade, ←Finset.prod_union hst, ←blade]
 
-lemma blade_prod_inter (s t : Finset σ) (hst : ¬Disjoint s t): blade (R := R) s * blade t = 0 := by
+lemma blade_mul_inter (s t : Finset σ) (hst : ¬Disjoint s t): blade (R := R) s * blade t = 0 := by
   obtain ⟨i, hi⟩ := Finset.not_disjoint_iff.1 hst
   rw [blade, blade, ←Finset.prod_erase_mul s generator hi.left, ←Finset.mul_prod_erase t generator hi.right, mul_assoc, ←mul_assoc (generator i), ←sq, gen_sq]
   simp
 
+lemma blade_mul (s t : Finset σ) :
+    blade (R := R) s * blade t = if Disjoint s t then blade (s ∪ t) else 0 := by
+  by_cases hst : Disjoint s t
+  · rw [blade_mul_disjoint s t hst, if_pos hst]
+  · rw [blade_mul_inter s t hst, if_neg hst]
 
--- After this we'll want to turn it into a basis using `Basis.mk`, but we'll need to prove linear independence using `LinearIndependent.map`.
--- `MvPolynomial.linearIndependent_X`
-lemma blade_span (s : Finset σ) : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) = ⊤ := by
+-- After this we'll want to turn it into a basis using `Basis.mk`, but we'll need to prove
+-- linear independence using `LinearIndependent.map`.
+lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) = ⊤ := by
   have h1 : 1 ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by
     rw [←blade_empty]
     apply Submodule.subset_span
@@ -74,27 +90,37 @@ lemma blade_span (s : Finset σ) : Submodule.span R (Set.range (blade : Finset �
 
   have h2 : ∀ (x y : ZeonAlgebra σ R),  x ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) → y ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) → x * y ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by
     have h : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) = Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R) ∪ {0}) := by
-      rw [Submodule.span_union]
-      have h'' : Set.singleton (0 : ZeonAlgebra σ R) ⊆ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by
-        sorry
-      have h''' : Submodule.span R {0} ≤ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by
-        apply Submodule.span_le.2 h''
-      rw [sup_eq_left.mpr h''']
+      simp
 
-    have h' : ∀ (s t : Finset σ), blade s * blade t ∈ Set.range (blade : Finset σ → ZeonAlgebra σ R) ∪ {0} := by
-      intro s t
+    have h' (s t : Finset σ) : blade s * blade t ∈ Set.range (blade : Finset σ → ZeonAlgebra σ R) ∪ {0} := by
+      rw [blade_mul]
       by_cases hst : Disjoint s t
-      rw [blade_prod_disjoint s t hst]
-      apply Set.mem_union_left
-      exact Set.mem_range_self (s ∪ t)
-      rw [blade_prod_inter s t hst]
-      apply Set.mem_union_right
-      exact Set.mem_singleton 0
+      all_goals simp [hst]
 
     intros x y hx hy
     rw [h] at hx hy ⊢
-
-    sorry
+    induction hx, hy using Submodule.span_induction₂ with
+    | mem_mem x y hx hy =>
+      apply Submodule.subset_span
+      simp only [Set.union_singleton, Set.mem_insert_iff, Set.mem_range] at hx hy
+      obtain (rfl | ⟨s, rfl⟩) := hx <;> obtain (rfl | ⟨t, rfl⟩) := hy
+      rotate_right
+      · exact h' s t
+      all_goals simp
+    | zero_left y hy => simp
+    | zero_right x hx => simp
+    | add_left x y z hx hy hz h₁ h₂ =>
+      rw [add_mul]
+      exact add_mem h₁ h₂
+    | add_right x y z hx hy hz h₁ h₂ =>
+      rw [mul_add]
+      exact add_mem h₁ h₂
+    | smul_left r x y hx hy h =>
+      rw [smul_mul_assoc]
+      exact Submodule.smul_mem _ r h
+    | smul_right r x y hx hy h =>
+      rw [mul_smul_comm]
+      exact Submodule.smul_mem _ r h
 
   have h3 : Set.range (generator : σ → ZeonAlgebra σ R) ⊆ (Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R))).toSubalgebra h1 h2 := by
     intro x hx
@@ -114,6 +140,60 @@ lemma blade_span (s : Finset σ) : Submodule.span R (Set.range (blade : Finset �
 
   exact top_le_iff.1 h5
 
+def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ | ∀ x, f x ≤ 1} where
+  toFun s := by
+    refine ⟨?func, ?func_le⟩
+    · refine
+        { support := s
+          toFun x := if x ∈ s then 1 else 0
+          mem_support_toFun := by simp }
+    · intro x
+      simp only [Finsupp.coe_mk]
+      split_ifs
+      all_goals simp
+  invFun f := (f : σ →₀ ℕ).support
+  left_inv s := by simp
+  right_inv f := by
+    simp only [Set.coe_setOf, Set.mem_setOf_eq, Finsupp.mem_support_iff, ne_eq, ite_not]
+    ext x
+    simp
+    by_cases h : (f : σ →₀ ℕ) x = 0
+    · simp [h]
+    · simp [h]
+      have := f.property x
+      omega
+
+lemma ker_mk_toSubmodule :
+    (RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R)).restrictScalars R =
+      restrictSupport R {f | ∃ x, f x ≥ 2} := by
+  sorry
+
+lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonAlgebra σ R) := by
+  -- `LinearIndependent.map`
+  -- `MvPolynomial.basisMonomials`
+  -- `Finsupp.disjoint_supported_supported`
+  -- `MvPolynomial.restrictSupport`
+  -- `MvPolynomial.mem_ideal_span_monomial_image`
+  let s : Set (σ →₀ ℕ) := {f : σ →₀ ℕ | ∀ x, f x ≤ 1}
+  let t : Set (σ →₀ ℕ) := {f : σ →₀ ℕ | ∃ x, f x ≥ 2}
+  have hst : Disjoint s t := sorry
+  have h₁ : Disjoint (restrictSupport R s) (restrictSupport R t) := Finsupp.disjoint_supported_supported hst
+  have h₂ : LinearIndependent R (fun s' : σ →₀ ℕ ↦ monomial s' (1 : R)) := basisMonomials σ R |>.linearIndependent
+  have h₃ : LinearIndependent R (fun f : s ↦ monomial (f : σ →₀ ℕ) (1 : R)) := by
+    apply h₂.comp
+    exact Subtype.val_injective
+  have h₄ := LinearIndependent.map h₃ (f := mk.toLinearMap) <| by
+    convert h₁
+    · sorry
+    · sorry -- use `ker_mk_toSubmodule`?
+  refine linearIndependent_equiv' Finset.finsuppEquiv ?_ |>.mpr h₄
+  sorry
+
+example {α M : Type*} [TopologicalSpace M] [AddMonoid M] [ContinuousAdd M] {f g : α → M}
+    {x : Filter α} (hf : Filter.Tendsto f x (nhds 0)) (hg : Filter.Tendsto g x (nhds 0)) :
+    Filter.Tendsto (fun x ↦ f x + g x) x (nhds 0) := by
+  convert hf.add hg
+  simp
 
   -- this should follow from `adjoin_generators` and the fact that the blades are products of the generators
   -- We want to claim that if `s` is a set closed under multiplication, then so is `span s`, and then we apply
