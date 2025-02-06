@@ -164,9 +164,16 @@ def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ | ∀ x, f x ≤ 1} w
       omega
 
 lemma ker_mk_toSubmodule :
-    (RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R)).restrictScalars R =
-      restrictSupport R {f | ∃ x, f x ≥ 2} := by
-  sorry
+     restrictSupport R {f | ∃ x, f x ≥ 2} = (RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R)).restrictScalars R := by
+  trans (Ideal.span ((monomial · (1 : R)) '' {Finsupp.single x 2 | (x : σ)})).restrictScalars R
+  · ext a
+    rw [restrictSupport, Finsupp.mem_supported, ← MvPolynomial.support]
+    simp only [Set.subset_def, Submodule.restrictScalars_mem, mem_ideal_span_monomial_image]
+    simp
+  · rw [ker_mk]
+    congr
+    ext
+    simp [X_pow_eq_monomial]
 
 lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonAlgebra σ R) := by
   -- `LinearIndependent.map`
@@ -176,7 +183,14 @@ lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonA
   -- `MvPolynomial.mem_ideal_span_monomial_image`
   let s : Set (σ →₀ ℕ) := {f : σ →₀ ℕ | ∀ x, f x ≤ 1}
   let t : Set (σ →₀ ℕ) := {f : σ →₀ ℕ | ∃ x, f x ≥ 2}
-  have hst : Disjoint s t := sorry
+  have hst : Disjoint s t := by
+    apply Set.disjoint_iff_forall_ne.2
+    rintro f hf g hg
+    obtain ⟨x, hx⟩ := hg
+    rw [Finsupp.ne_iff]
+    use x
+    have h : f x ≤ 1 := hf x
+    omega
   have h₁ : Disjoint (restrictSupport R s) (restrictSupport R t) := Finsupp.disjoint_supported_supported hst
   have h₂ : LinearIndependent R (fun s' : σ →₀ ℕ ↦ monomial s' (1 : R)) := basisMonomials σ R |>.linearIndependent
   have h₃ : LinearIndependent R (fun f : s ↦ monomial (f : σ →₀ ℕ) (1 : R)) := by
@@ -184,9 +198,19 @@ lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonA
     exact Subtype.val_injective
   have h₄ := LinearIndependent.map h₃ (f := mk.toLinearMap) <| by
     convert h₁
-    · sorry
-    · sorry -- use `ker_mk_toSubmodule`?
+    · rw [restrictSupport, Finsupp.supported_eq_span_single, Set.image_eq_range]
+      rfl
+    · rw [ker_mk_toSubmodule]
+      rfl
   refine linearIndependent_equiv' Finset.finsuppEquiv ?_ |>.mpr h₄
+  unfold blade
+  unfold generator
+  ext s
+  simp
+  rw [←map_prod]
+  congr
+  rw [monomial_eq]
+  simp
   sorry
 
 example {α M : Type*} [TopologicalSpace M] [AddMonoid M] [ContinuousAdd M] {f g : α → M}
@@ -194,11 +218,6 @@ example {α M : Type*} [TopologicalSpace M] [AddMonoid M] [ContinuousAdd M] {f g
     Filter.Tendsto (fun x ↦ f x + g x) x (nhds 0) := by
   convert hf.add hg
   simp
-
-  -- this should follow from `adjoin_generators` and the fact that the blades are products of the generators
-  -- We want to claim that if `s` is a set closed under multiplication, then so is `span s`, and then we apply
-  -- `Submodule.toSubalgebra` to get a subalgebra containing the blades, which hence also contains the generators.
-  -- this must be bigger than `Algebra.adjoin R (Set.range (generator : σ → ZeonAlgebra σ R))`, which is the whole algebra.
 
 /- This is wrong but maybe sort of close -/
 def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s
