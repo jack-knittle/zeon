@@ -140,7 +140,7 @@ lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebr
 
   exact top_le_iff.1 h5
 
-def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ | ∀ x, f x ≤ 1} where
+@[simps?] def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ | ∀ x, f x ≤ 1} where
   toFun s := by
     refine ⟨?func, ?func_le⟩
     · refine
@@ -203,15 +203,21 @@ lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonA
     · rw [ker_mk_toSubmodule]
       rfl
   refine linearIndependent_equiv' Finset.finsuppEquiv ?_ |>.mpr h₄
-  unfold blade
-  unfold generator
+  unfold blade generator
   ext s
   simp
-  rw [←map_prod]
-  congr
-  rw [monomial_eq]
-  simp
-  sorry
+  rw [←map_prod, monomial_eq, Finsupp.prod]
+  simp [Finset.finsuppEquiv]
+
+def basisBlades : Basis (Finset σ) R (ZeonAlgebra σ R) := by
+  apply Basis.mk
+  · exact linearIndependent_blade
+  · apply top_le_iff.2
+    exact blade_span
+
+end ZeonAlgebra
+
+end
 
 example {α M : Type*} [TopologicalSpace M] [AddMonoid M] [ContinuousAdd M] {f g : α → M}
     {x : Filter α} (hf : Filter.Tendsto f x (nhds 0)) (hg : Filter.Tendsto g x (nhds 0)) :
