@@ -5,7 +5,7 @@ noncomputable section
 variable (σ R : Type*) [CommRing R]
 
 open MvPolynomial
-
+/-- The Zeon algebra -/
 def ZeonAlgebra := MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}
 
 namespace ZeonAlgebra
@@ -17,7 +17,7 @@ instance : Algebra R (ZeonAlgebra σ R) :=
   inferInstanceAs (Algebra R (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
 
 variable {σ R}
-
+ /-- takes multivariate polynomials and returns the corresponding zeon -/
 def mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R := Ideal.Quotient.mkₐ _ _
 
 lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R) = Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} :=
@@ -25,7 +25,7 @@ lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R) =
 
 lemma mk_surjective : Function.Surjective (mk : MvPolynomial σ R → ZeonAlgebra σ R) :=
   Ideal.Quotient.mkₐ_surjective R _
-
+/-- the X_n terms in the ZeonAlgebra which square to 0 -/
 def generator (n : σ) : ZeonAlgebra σ R := mk (X n)
 
 @[simp]
@@ -51,6 +51,7 @@ lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → ZeonAl
   rw [Algebra.map_top, AlgHom.range_eq_top]
   exact mk_surjective
 
+/-- products of generators -/
 def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
 
 lemma blade_empty : blade (R := R) (∅ : Finset σ) = 1 := by
@@ -140,7 +141,8 @@ lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebr
 
   exact top_le_iff.1 h5
 
-@[simps?] def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ | ∀ x, f x ≤ 1} where
+/-- equivalence of finset and finitely supported set with values less than or equal to 1 -/
+@[simps] def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ // ∀ x, f x ≤ 1} where
   toFun s := by
     refine ⟨?func, ?func_le⟩
     · refine
@@ -209,15 +211,50 @@ lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonA
   rw [←map_prod, monomial_eq, Finsupp.prod]
   simp [Finset.finsuppEquiv]
 
+/-- The basis of the Zeon algebra which is formed by the blades -/
 def basisBlades : Basis (Finset σ) R (ZeonAlgebra σ R) := by
   apply Basis.mk
   · exact linearIndependent_blade
   · apply top_le_iff.2
     exact blade_span
 
-end ZeonAlgebra
+def gradeSubmodule (n : ℕ) : Submodule R (ZeonAlgebra σ R) :=
+  Submodule.span R {x | ∃ s, blade s = x ∧ s.card = n}
 
-end
+instance : SetLike.GradedMonoid (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
+  one_mem := by
+    rw [←blade_empty]
+    apply Submodule.subset_span
+    use ∅
+    exact ⟨rfl, rfl⟩
+
+  mul_mem := by
+    intros n m x y hx hy
+    induction hx, hy using Submodule.span_induction₂ with
+    | mem_mem x y hx hy =>
+      obtain ⟨s, rfl, rfl⟩ := hx
+      obtain ⟨t, rfl, rfl⟩ := hy
+      by_cases hst : Disjoint s t
+      · apply Submodule.subset_span
+        rw [blade_mul_disjoint s t hst]
+        use s ∪ t
+        exact ⟨rfl, Finset.card_union_eq_card_add_card.2 hst⟩
+      · rw [blade_mul_inter s t hst]
+        simp
+    | zero_left y hy => simp
+    | zero_right x hx => simp
+    | add_left x y z hx hy hz ha hb =>
+      rw [add_mul]
+      exact Submodule.add_mem (gradeSubmodule (n + m)) ha hb
+    | add_right x y z hx hy hz ha hb =>
+      rw [mul_add]
+      exact Submodule.add_mem (gradeSubmodule (n + m)) ha hb
+    | smul_left r x y hx hy ha =>
+      rw [smul_mul_assoc]
+      exact Submodule.smul_mem (gradeSubmodule (n + m)) r ha
+    | smul_right r x y hx hy ha =>
+      rw [mul_smul_comm]
+      exact Submodule.smul_mem (gradeSubmodule (n + m)) r ha
 
 example {α M : Type*} [TopologicalSpace M] [AddMonoid M] [ContinuousAdd M] {f g : α → M}
     {x : Filter α} (hf : Filter.Tendsto f x (nhds 0)) (hg : Filter.Tendsto g x (nhds 0)) :
