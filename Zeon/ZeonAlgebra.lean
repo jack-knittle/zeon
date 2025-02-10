@@ -1,5 +1,7 @@
 import Mathlib
 
+open scoped Finset
+
 noncomputable section
 
 variable (σ R : Type*) [CommRing R]
@@ -54,10 +56,14 @@ lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → ZeonAl
 /-- products of generators -/
 def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
 
-lemma blade_empty : blade (R := R) (∅ : Finset σ) = 1 := by
+notation "ζ[" R "]" => blade (R := R)
+notation "ζ" => blade
+
+
+lemma blade_empty : ζ[R] (∅ : Finset σ) = 1 := by
   simp only [blade, Finset.prod_empty]
 
-lemma blade_sq (s : Finset σ) (hs : s.Nonempty) : blade (R := R) s ^ 2 = 0 := by
+lemma blade_sq (s : Finset σ) (hs : s.Nonempty) : ζ[R] s ^ 2 = 0 := by
   obtain ⟨i, hi⟩ := hs
   rw [blade, ←Finset.prod_pow, Finset.prod_eq_zero hi (gen_sq i)]
 
@@ -165,6 +171,7 @@ lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebr
       have := f.property x
       omega
 
+omit [DecidableEq σ] in
 lemma ker_mk_toSubmodule :
      restrictSupport R {f | ∃ x, f x ≥ 2} = (RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R)).restrictScalars R := by
   trans (Ideal.span ((monomial · (1 : R)) '' {Finsupp.single x 2 | (x : σ)})).restrictScalars R
@@ -218,13 +225,15 @@ def basisBlades : Basis (Finset σ) R (ZeonAlgebra σ R) := by
   · apply top_le_iff.2
     exact blade_span
 
+open Submodule
+
 def gradeSubmodule (n : ℕ) : Submodule R (ZeonAlgebra σ R) :=
-  Submodule.span R {x | ∃ s, blade s = x ∧ s.card = n}
+  span R (ζ '' {s | #s = n})
 
 instance : SetLike.GradedMonoid (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
   one_mem := by
     rw [←blade_empty]
-    apply Submodule.subset_span
+    apply subset_span
     use ∅
     exact ⟨rfl, rfl⟩
 
@@ -238,7 +247,7 @@ instance : SetLike.GradedMonoid (gradeSubmodule : ℕ → Submodule R (ZeonAlgeb
       · apply Submodule.subset_span
         rw [blade_mul_disjoint s t hst]
         use s ∪ t
-        exact ⟨rfl, Finset.card_union_eq_card_add_card.2 hst⟩
+        exact ⟨Finset.card_union_eq_card_add_card.2 hst, rfl⟩
       · rw [blade_mul_inter s t hst]
         simp
     | zero_left y hy => simp
@@ -255,12 +264,6 @@ instance : SetLike.GradedMonoid (gradeSubmodule : ℕ → Submodule R (ZeonAlgeb
     | smul_right r x y hx hy ha =>
       rw [mul_smul_comm]
       exact Submodule.smul_mem (gradeSubmodule (n + m)) r ha
-
-example {α M : Type*} [TopologicalSpace M] [AddMonoid M] [ContinuousAdd M] {f g : α → M}
-    {x : Filter α} (hf : Filter.Tendsto f x (nhds 0)) (hg : Filter.Tendsto g x (nhds 0)) :
-    Filter.Tendsto (fun x ↦ f x + g x) x (nhds 0) := by
-  convert hf.add hg
-  simp
 
 /- This is wrong but maybe sort of close -/
 def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s
