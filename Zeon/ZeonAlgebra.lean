@@ -1,4 +1,5 @@
 import Mathlib
+import Zeon.Basis
 
 open scoped Finset
 
@@ -264,6 +265,30 @@ instance : SetLike.GradedMonoid (gradeSubmodule : ℕ → Submodule R (ZeonAlgeb
     | smul_right r x y hx hy ha =>
       rw [mul_smul_comm]
       exact Submodule.smul_mem (gradeSubmodule (n + m)) r ha
+
+instance : DirectSum.Decomposition (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) :=
+  Basis.directSumDecomposition (Finset.cardEquiv σ) basisBlades gradeSubmodule <| by
+    intro n
+    rw [gradeSubmodule]
+    congr!
+    ext x
+    constructor
+    · rintro ⟨s, rfl⟩
+      use s
+      use s.2
+      simp [basisBlades]
+      rfl
+    · rintro ⟨s, hs, rfl⟩
+      use ⟨s, hs⟩
+      simp [basisBlades]
+      rfl
+
+
+instance : GradedAlgebra (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
+
+example : R →ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := Algebra.ofId _ _
+
+end ZeonAlgebra
 
 /- This is wrong but maybe sort of close -/
 def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s

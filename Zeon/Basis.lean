@@ -1,6 +1,4 @@
-import Mathlib.LinearAlgebra.Basis.Basic
-import Mathlib.Data.Finsupp.ToDFinsupp
-import Mathlib.Algebra.DirectSum.Decomposition
+import Mathlib
 
 open DirectSum
 
@@ -10,7 +8,7 @@ abbrev DirectSum.Decomposition.ofLinearEquiv {ι R M : Type*} [DecidableEq ι]
     [Semiring R] [AddCommMonoid M] [Module R M] (ℳ : ι → Submodule R M)
     (decompose : M ≃ₗ[R] ⨁ i, ℳ i) (decompose_symm : decompose.symm = coeLinearMap ℳ) :
     Decomposition ℳ :=
-  sorry
+  .ofLinearMap ℳ decompose (by simp [← decompose_symm]) (by simp [← decompose_symm])
 
 noncomputable section
 open Submodule
@@ -34,15 +32,14 @@ def Basis.dfinsuppEquiv
         apply LinearIndependent.comp b.linearIndependent _ _
         apply Function.Injective.comp e.symm.injective
         apply sigma_mk_injective
-      have h' : ∀ i, Basis (η i) R (f i) := by
+      let h' : ∀ i, Basis (η i) R (f i) := by
         intro i
         let b' := Basis.span (h i)
-        rw [hf] at b'
-        exact b'
+        exact b'.map (.ofEq _ _ (hf i))
       let n := (b.reindex e).repr
-      let d := ((DFinsupp.mapRange.linearEquiv fun i => (h' i).repr).trans (sigmaFinsuppLequivDFinsupp R).symm)
+      let d := DFinsupp.basis h' --((DFinsupp.mapRange.linearEquiv fun i => (h' i).repr).trans (sigmaFinsuppLequivDFinsupp R).symm)
       -- DFinsupp.basis kept giving me errors so I just copied from the definition of repr
-      exact n ≪≫ₗ d.symm
+      exact n ≪≫ₗ d.repr.symm
 
 -- write a lemma saying what the above does to a basis vector `b i` for `i : ι` and prove it.
 lemma Basis.dfinsuppEquiv_basis_vector [DecidableEq ι]
@@ -55,13 +52,10 @@ lemma Basis.dfinsuppEquiv_basis_vector [DecidableEq ι]
       use (e i).snd
       simp⟩ := by
     rw [Basis.dfinsuppEquiv]
-    simp
-    congr
-    refine Subtype.coe_eq_of_eq_mk ?_
-    have h1 : (b ∘ e.symm ∘ Sigma.mk (e i).fst) (e i).snd = b i := by
-      simp
-    rw [←h1]
-    sorry
+    ext j
+    obtain (rfl | hj) := eq_or_ne j (e i).fst
+    · simp [DFinsupp.basis, Basis.span_apply]
+    · simp [DFinsupp.basis, hj.symm]
 
 /-- The `LinearEquiv.symm` of `Basis.dfinsuppEquiv` is the sum of the
 vectors from the component submodules. -/
