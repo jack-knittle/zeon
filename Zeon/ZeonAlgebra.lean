@@ -286,9 +286,24 @@ instance : DirectSum.Decomposition (gradeSubmodule : ℕ → Submodule R (ZeonAl
 
 instance : GradedAlgebra (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
 
-example : R →ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := Algebra.ofId _ _
+lemma grade_zero : Module.rank R (gradeSubmodule (σ := σ) (R := R) 0) = 1 := by
+  unfold gradeSubmodule
+  have h : ζ[R] '' {s : Finset σ | #s = 0} = {1} := by
+    simp [Finset.card_eq_zero, blade_empty]
+  rw [h]
+  sorry
 
-end ZeonAlgebra
+def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
+  let h : R →ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := Algebra.ofId _ _
+  let h' : gradeSubmodule (σ := σ) (R := R) 0 → R := by
+    intros a
+    simp [gradeSubmodule, blade_empty] at a
+    -- apply Submodule.mem_span_singleton at a
+    -- I want to use mem_span_singleton_mul here, and then use (a : R) as the output of the function
+    -- (but I have a type not an element of the span)
+    -- and then construct an AlgHom and use AlgEquiv.ofAlgHom
+    -- I'm not sure if this is the right way to do it though
+
 
 /- This is wrong but maybe sort of close -/
 def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s

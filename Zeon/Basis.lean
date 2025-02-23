@@ -37,8 +37,7 @@ def Basis.dfinsuppEquiv
         let b' := Basis.span (h i)
         exact b'.map (.ofEq _ _ (hf i))
       let n := (b.reindex e).repr
-      let d := DFinsupp.basis h' --((DFinsupp.mapRange.linearEquiv fun i => (h' i).repr).trans (sigmaFinsuppLequivDFinsupp R).symm)
-      -- DFinsupp.basis kept giving me errors so I just copied from the definition of repr
+      let d := DFinsupp.basis h'
       exact n ≪≫ₗ d.repr.symm
 
 -- write a lemma saying what the above does to a basis vector `b i` for `i : ι` and prove it.
@@ -71,7 +70,7 @@ lemma Basis.dfinsuppEquiv_symm [DecidableEq ι]
   have h : ∀ (i : ι'), (b.dfinsuppEquiv e f hf).symm (b' i) = DFinsupp.coprodMap (fun i ↦ (f i).subtype) (b' i) := by
     intro i
     rw [h', Basis.map_apply, Basis.dfinsuppEquiv_basis_vector, DFinsupp.coprodMap_apply_single]
-    exact rfl
+    rfl
   exact Basis.ext b' h
 
 /-- The direct sum decomposition of a module induced by a partition of the vectors in a basis. -/
@@ -94,6 +93,26 @@ def Finset.cardEquiv (σ : Type*) : Finset σ ≃ Σ n : ℕ, {s : Finset σ // 
     refine ⟨hs, ?_⟩
     refine (Subtype.heq_iff_coe_eq ?_).mpr rfl
     exact fun x ↦ Eq.congr_right hs
+
+variable {A σ : Type*}
+
+abbrev GradedAlgebra.projZeroAlgHom [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
+[AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → Submodule R A)
+[GradedAlgebra 𝒜] : A →ₐ[R] A :=
+  {GradedRing.projZeroRingHom 𝒜 with
+  commutes' := by
+    intro r
+    exact DirectSum.decompose_of_mem_same (SetLike.algebraMap_mem_graded 𝒜 r) (x := (algebraMap R A) r) (ℳ := 𝒜)}
+
+abbrev GradedAlgebra.projZeroAlgHom' [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
+[AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → Submodule R A)
+[GradedAlgebra 𝒜] : A →ₐ[R] 𝒜 0 :=
+  {GradedRing.projZeroRingHom' 𝒜 with
+  commutes' := by
+    intro r
+    simp
+    rw [←GradedRing.projZeroRingHom'_apply_coe (a := (algebraMap R (𝒜 0)) r)]
+    rfl}
 
 -- other goals:
 -- 0. Use the above to get a `GradedAlgebra` structure on `Zeon σ R`.
