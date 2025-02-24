@@ -323,6 +323,53 @@ def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
     rw [←hr]
     exact Algebra.algebraMap_eq_smul_one r
 
+lemma grade_zero_algebraMap_surjective :
+    Function.Surjective (algebraMap R (gradeSubmodule (σ := σ) (R := R) 0)) := by
+  rintro ⟨x, hx⟩
+  simp [Algebra.algebraMap_eq_smul_one, ← blade_empty]
+  use basisBlades.coord ∅ x
+  ext
+  simp
+  sorry -- provable
+
+def grade_zero_R' : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
+  have h₀ : basisBlades (R := R) (σ := σ) ∅ = ζ ∅ := by simp [basisBlades]
+  have g : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
+        unfold gradeSubmodule
+        intro x
+        simp [Finset.card_eq_zero]
+        exact (Submodule.mem_span_singleton (R := R) (x := x) (y := ζ ∅)).1
+  refine
+    {
+      toFun := Algebra.ofId _ _
+      invFun := (basisBlades.coord ∅ (R := R) (ι := Finset σ)) ∘ Submodule.subtype (gradeSubmodule 0)
+      left_inv r := by
+        simp [Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, ← blade_empty, ← h₀]
+      right_inv x := by
+        simp
+        obtain ⟨r, hr⟩ := g x x.2
+        rw [←hr, ←h₀]
+        simp [Algebra.ofId]
+        ext
+        rw [←hr]
+        exact Algebra.algebraMap_eq_smul_one r
+      map_mul' := by simp
+      map_add' := by simp
+      commutes' _ := by simp [Algebra.ofId_apply]
+    }
+
+def scalar : ZeonAlgebra σ R →ₐ[R] R :=
+  (grade_zero_R' (σ := σ) (R := R) |>.symm : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R) |>.comp <|
+    GradedAlgebra.projZeroAlgHom' (gradeSubmodule (σ := σ) (R := R))
+
+-- `scalar = basisBlades.coord ∅`
+-- `scalar ∘ algebraMap (A := ZeroAlgebra σ R) = id`
+
+
+end ZeonAlgebra
+
+end
+
 /- This is wrong but maybe sort of close -/
 def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s
 

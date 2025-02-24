@@ -97,7 +97,7 @@ def Finset.cardEquiv (σ : Type*) : Finset σ ≃ Σ n : ℕ, {s : Finset σ // 
 variable {A σ : Type*}
 
 abbrev GradedAlgebra.projZeroAlgHom [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
-[AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → Submodule R A)
+[AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] (𝒜 : ι → Submodule R A)
 [GradedAlgebra 𝒜] : A →ₐ[R] A :=
   {GradedRing.projZeroRingHom 𝒜 with
   commutes' := by
@@ -105,7 +105,7 @@ abbrev GradedAlgebra.projZeroAlgHom [CommSemiring R] [Semiring A] [Algebra R A] 
     exact DirectSum.decompose_of_mem_same (SetLike.algebraMap_mem_graded 𝒜 r) (x := (algebraMap R A) r) (ℳ := 𝒜)}
 
 abbrev GradedAlgebra.projZeroAlgHom' [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
-[AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ι → Submodule R A)
+[AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] (𝒜 : ι → Submodule R A)
 [GradedAlgebra 𝒜] : A →ₐ[R] 𝒜 0 :=
   {GradedRing.projZeroRingHom' 𝒜 with
   commutes' := by
