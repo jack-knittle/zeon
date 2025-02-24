@@ -186,11 +186,6 @@ lemma ker_mk_toSubmodule :
     simp [X_pow_eq_monomial]
 
 lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonAlgebra σ R) := by
-  -- `LinearIndependent.map`
-  -- `MvPolynomial.basisMonomials`
-  -- `Finsupp.disjoint_supported_supported`
-  -- `MvPolynomial.restrictSupport`
-  -- `MvPolynomial.mem_ideal_span_monomial_image`
   let s : Set (σ →₀ ℕ) := {f : σ →₀ ℕ | ∀ x, f x ≤ 1}
   let t : Set (σ →₀ ℕ) := {f : σ →₀ ℕ | ∃ x, f x ≥ 2}
   have hst : Disjoint s t := by
@@ -286,24 +281,47 @@ instance : DirectSum.Decomposition (gradeSubmodule : ℕ → Submodule R (ZeonAl
 
 instance : GradedAlgebra (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
 
-lemma grade_zero : Module.rank R (gradeSubmodule (σ := σ) (R := R) 0) = 1 := by
-  unfold gradeSubmodule
-  have h : ζ[R] '' {s : Finset σ | #s = 0} = {1} := by
-    simp [Finset.card_eq_zero, blade_empty]
-  rw [h]
-  sorry
-
 def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
-  let h : R →ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := Algebra.ofId _ _
-  let h' : gradeSubmodule (σ := σ) (R := R) 0 → R := by
-    intros a
-    simp [gradeSubmodule, blade_empty] at a
-    -- apply Submodule.mem_span_singleton at a
-    -- I want to use mem_span_singleton_mul here, and then use (a : R) as the output of the function
-    -- (but I have a type not an element of the span)
-    -- and then construct an AlgHom and use AlgEquiv.ofAlgHom
-    -- I'm not sure if this is the right way to do it though
-
+  have h₀ : basisBlades (R := R) (σ := σ) ∅ = ζ ∅ := by
+        unfold basisBlades
+        simp
+  have g : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
+        unfold gradeSubmodule
+        intro x
+        simp [Finset.card_eq_zero]
+        exact (Submodule.mem_span_singleton (R := R) (x := x) (y := ζ ∅)).1
+  let h'' : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R := by
+    refine {
+      toFun := (basisBlades.coord ∅ (R := R) (ι := Finset σ)) ∘ Submodule.subtype (gradeSubmodule 0),
+      map_one' := ?_,
+      map_mul' := ?_,
+      map_zero' := ?_,
+      map_add' := ?_,
+      commutes' := ?_
+    }
+    all_goals simp
+    · rw [←blade_empty, ←h₀, basisBlades.repr_self]
+      exact Finsupp.single_eq_same
+    · intro x hx y hy
+      obtain ⟨r, hr⟩ := g x hx
+      obtain ⟨s, hs⟩ := g y hy
+      rw [←hr, ←hs, ←h₀]
+      nth_rewrite 1 [h₀, blade_empty]
+      simp [mul_comm]
+    · intro r
+      rw [Algebra.algebraMap_eq_smul_one, ←blade_empty, ←h₀]
+      simp
+  apply AlgEquiv.ofAlgHom (Algebra.ofId _ _) h'' ?_
+  · ext
+  · unfold h''
+    ext x
+    simp
+    obtain ⟨r, hr⟩ := g x x.2
+    rw [←hr, ←h₀]
+    simp [Algebra.ofId]
+    ext
+    rw [←hr]
+    exact Algebra.algebraMap_eq_smul_one r
 
 /- This is wrong but maybe sort of close -/
 def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s
