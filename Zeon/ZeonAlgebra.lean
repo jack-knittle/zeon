@@ -362,6 +362,34 @@ def scalar : ZeonAlgebra σ R →ₐ[R] R :=
   (grade_zero_R' (σ := σ) (R := R) |>.symm : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R) |>.comp <|
     GradedAlgebra.projZeroAlgHom' (gradeSubmodule (σ := σ) (R := R))
 
+lemma scalar_basisBlades (x : ZeonAlgebra σ R) : scalar x = basisBlades.coord ∅ x := by
+  sorry
+
+lemma nilpotent_iff_scalar_nilpotent (x : ZeonAlgebra σ R) : IsNilpotent x ↔ IsNilpotent (scalar x) := by
+  constructor
+  · intro hx
+    exact IsNilpotent.map hx scalar
+  · intro hx
+    have h (i : Finset σ) : i ≠ ∅ → IsNilpotent (basisBlades (σ := σ) (R := R) i) := by
+      rintro hi
+      use 2
+      simp [basisBlades, blade_sq (σ := σ) (R := R) i (Finset.nonempty_iff_ne_empty.2 hi)]
+
+    induction (basisBlades (σ := σ) (R := R).mem_span x) using Submodule.span_induction with
+      | mem y hy =>
+        obtain ⟨i, rfl⟩ := hy
+        by_cases hi : i = ∅
+        · simp [hi, scalar_basisBlades] at hx
+          -- the logic here is giving me a headache bc im proving something false but it makes sense i think
+          simp [basisBlades, blade_empty, hi]
+          sorry
+        · exact h i hi
+      | add _ _ _ _ h1 h2 =>
+        apply ←Commute.isNilpotent_add _ hx
+      | smul _ _ _ _ => sorry
+      | zero => simp
+
+    sorry
 -- `scalar = basisBlades.coord ∅`
 -- `scalar ∘ algebraMap (A := ZeroAlgebra σ R) = id`
 
@@ -369,36 +397,3 @@ def scalar : ZeonAlgebra σ R →ₐ[R] R :=
 end ZeonAlgebra
 
 end
-
-/- This is wrong but maybe sort of close -/
-def grade_n_part (n : ℕ) (x : ZeonAlgebra σ R) : ZeonAlgebra σ R := ∑ s in Finset.filter (λ s => s.card = n) (Finset.powerset (Finset.univ : Finset σ)), blade s
-
-/- The constant part of a zeon. Probably can just use grade 0 part? -/
-def Rz (x : ZeonAlgebra σ R) : ZeonAlgebra σ R :=
-  grade_n_part 0 x
-
-/- The rest -/
-def Dz (x : ZeonAlgebra σ R) : ZeonAlgebra σ R :=
-  x - Rz x
-
-/- n <= k + 1, where k is the number of generators in the algebra -/
-lemma Dz_nilpotent (x : ZeonAlgebra σ R) (hx : Rz x = 0): ∃ n : ℕ, x ^ n = 0 := by
-  sorry
-
-/- The product of k + 1 zeons with Ru = 0 is 0 -/
-lemma prod_eq_zero (l : Multiset (ZeonAlgebra σ R)) [Fintype σ] (hl : l.card ≥ Fintype.card σ) : Multiset.prod l = 0 := by
-  sorry
-
-def index_of_nilpotency (x : ZeonAlgebra σ R) (hx : Rz x = 0) : ℕ :=
-  Nat.find (∃ n, x ^ n = 0)
-
-end ZeonAlgebra
-
-end
-
-
-/-
-Write more lemmas about generators, and try to prove them.
-Define blades. The argument of a blade should be `s : Finset σ`.
-Try to write some lemmas about blades.
--/
