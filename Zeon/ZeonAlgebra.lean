@@ -60,17 +60,18 @@ def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
 notation "ζ[" R "]" => blade (R := R)
 notation "ζ" => blade
 
-
 lemma blade_empty : ζ[R] (∅ : Finset σ) = 1 := by
   simp only [blade, Finset.prod_empty]
 
+@[simp]
 lemma blade_sq (s : Finset σ) (hs : s.Nonempty) : ζ[R] s ^ 2 = 0 := by
   obtain ⟨i, hi⟩ := hs
   rw [blade, ←Finset.prod_pow, Finset.prod_eq_zero hi (gen_sq i)]
 
+@[simp]
 lemma blade_pow (s : Finset σ) (k : ℕ) (hk : k ≥ 2) (hs : s.Nonempty) : blade (R := R) s ^ k = 0 := by
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hk
-  rw [pow_add, blade_sq s hs, zero_mul]
+  simp [pow_add, blade_sq s hs]
 
 variable [DecidableEq σ]
 
@@ -215,7 +216,7 @@ lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonA
   simp [Finset.finsuppEquiv]
 
 /-- The basis of the Zeon algebra which is formed by the blades -/
-def basisBlades : Basis (Finset σ) R (ZeonAlgebra σ R) := by
+@[simps! repr_symm_apply] def basisBlades : Basis (Finset σ) R (ZeonAlgebra σ R) := by
   apply Basis.mk
   · exact linearIndependent_blade
   · apply top_le_iff.2
@@ -272,11 +273,9 @@ instance : DirectSum.Decomposition (gradeSubmodule : ℕ → Submodule R (ZeonAl
       use s
       use s.2
       simp [basisBlades]
-      rfl
     · rintro ⟨s, hs, rfl⟩
       use ⟨s, hs⟩
       simp [basisBlades]
-      rfl
 
 instance : GradedAlgebra (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
 
@@ -284,13 +283,14 @@ lemma grade_zero_algebraMap_surjective :
     Function.Surjective (algebraMap R (gradeSubmodule (σ := σ) (R := R) 0)) := by
   rintro ⟨x, hx⟩
   simp [Algebra.algebraMap_eq_smul_one]
-  use basisBlades.coord ∅ x
-  ext
-  rw [←blade_empty]
-  simp
-  sorry -- provable
+  unfold gradeSubmodule at hx
+  simp [Finset.card_eq_zero] at hx
+  rw [mem_span_singleton, blade_empty] at hx
+  obtain ⟨r, hr⟩ := hx
+  use r
+  exact SetLike.coe_eq_coe.mp hr
 
-  lemma basis_blades_eq_blades (i : Finset σ): basisBlades (R := R) (σ := σ) i = ζ i := by simp [basisBlades]
+lemma basis_blades_eq_blades (i : Finset σ): basisBlades (R := R) (σ := σ) i = ζ i := by simp [basisBlades]
 
 def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
   have g : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
@@ -321,11 +321,28 @@ def scalar : ZeonAlgebra σ R →ₐ[R] R :=
   (grade_zero_R (σ := σ) (R := R) |>.symm : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R) |>.comp <|
     GradedAlgebra.projZeroAlgHom' (gradeSubmodule (σ := σ) (R := R))
 
-lemma scalar_basisBlades (x : ZeonAlgebra σ R) : scalar x = basisBlades.coord ∅ x := by
+def support (x : ZeonAlgebra σ R) := (basisBlades.repr x).support
+
+lemma blade_grade_zero (s : Finset σ) : ζ[R] s ∈ gradeSubmodule 0 ↔ s = ∅ := by
   sorry
+
+lemma grade_zero_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule 0 ↔ support x = {∅} := by
+  sorry
+
+lemma grade_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule n ↔ support x ⊆ {s : Finset σ | #s = n} := by
+  sorry
+
+lemma grade_zero_decomp (x : ZeonAlgebra σ R) : ((DirectSum.decompose gradeSubmodule) x) 0 = ⟨(basisBlades.repr x ∅) • ζ[R] ∅, by sorry⟩ := by
+  sorry
+
+lemma scalar_basisBlades (x : ZeonAlgebra σ R) : scalar x = basisBlades.coord ∅ x := by
+  simp [scalar, grade_zero_R, grade_zero_decomp, ←basis_blades_eq_blades ∅]
 
 lemma scalar_eq_algebraMap : scalar ∘ (algebraMap R (ZeonAlgebra σ R)) = id := by sorry
 
+lemma algebraMap_eq_scalar : (algebraMap R (ZeonAlgebra σ R)) ∘ scalar = id := by sorry
+
+omit [DecidableEq σ] in
 lemma nonempty_blade_nilpotent (s : Finset σ) : s.Nonempty → IsNilpotent (ζ[R] s) := by
   intro hs
   use 2
@@ -341,8 +358,7 @@ lemma nilpotent_iff_scalar_nilpotent (x : ZeonAlgebra σ R) : IsNilpotent x ↔ 
     intro i hi
     by_cases h1 : i = ∅
     · rw [←basisBlades.coord_apply, h1, ←scalar_basisBlades]
-      simp [basisBlades, blade_empty]
-      rw [←Algebra.algebraMap_eq_smul_one]
+      simp [basisBlades, blade_empty, ←Algebra.algebraMap_eq_smul_one]
       exact IsNilpotent.map hx (algebraMap R (ZeonAlgebra σ R)) -- using algebramap_eq_scalar seems nicer
     · apply IsNilpotent.smul
       rw [basis_blades_eq_blades]

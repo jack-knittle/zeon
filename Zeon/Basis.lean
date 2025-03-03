@@ -81,7 +81,7 @@ abbrev Basis.directSumDecomposition [DecidableEq ι]
     exact Decomposition.ofLinearEquiv (fun i => f i) (b.dfinsuppEquiv e f hf) (Eq.trans (Basis.dfinsuppEquiv_symm e b f hf) (DFinsupp.lhom_ext'_iff.mpr (congrFun rfl)))
 
 open Finset
-def Finset.cardEquiv (σ : Type*) : Finset σ ≃ Σ n : ℕ, {s : Finset σ // #s = n} where
+@[simps] def Finset.cardEquiv (σ : Type*) : Finset σ ≃ Σ n : ℕ, {s : Finset σ // #s = n} where
   toFun := fun s => ⟨s.card, ⟨s, rfl⟩⟩
   invFun := fun ⟨n, ⟨s, hs⟩⟩ => s
   left_inv := by
