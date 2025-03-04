@@ -290,7 +290,7 @@ lemma grade_zero_algebraMap_surjective :
   use r
   exact SetLike.coe_eq_coe.mp hr
 
-lemma basis_blades_eq_blades (i : Finset σ): basisBlades (R := R) (σ := σ) i = ζ i := by simp [basisBlades]
+lemma blades_eq_basis_blades : ζ[R] = basisBlades (R := R) (σ := σ) := by simp [basisBlades]
 
 def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
   have g : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
@@ -303,11 +303,11 @@ def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
       toFun := Algebra.ofId _ _
       invFun := (basisBlades.coord ∅ (R := R) (ι := Finset σ)) ∘ Submodule.subtype (gradeSubmodule 0)
       left_inv r := by
-        simp [Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, ← blade_empty, ← basis_blades_eq_blades]
+        simp [Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, ← blade_empty, blades_eq_basis_blades]
       right_inv x := by
         simp
         obtain ⟨r, hr⟩ := g x x.2
-        rw [←hr, ←basis_blades_eq_blades]
+        rw [←hr, blades_eq_basis_blades]
         simp [Algebra.ofId]
         ext
         rw [←hr]
@@ -323,15 +323,35 @@ def scalar : ZeonAlgebra σ R →ₐ[R] R :=
 
 abbrev support (x : ZeonAlgebra σ R) := (basisBlades.repr x).support
 
-lemma blade_grade_zero (s : Finset σ) : ζ[R] s ∈ gradeSubmodule 0 ↔ s = ∅ := by
-  sorry
+lemma blade_ne_zero (s : Finset σ) (h : Nontrivial R) : ζ[R] s ≠ 0 := by
+  exact linearIndependent_blade.ne_zero s (R := R)
 
-lemma grade_zero_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule 0 ↔ support x = {∅} := by
+lemma grade_zero_support (x : ZeonAlgebra σ R) (h : x ≠ 0): x ∈ gradeSubmodule 0 ↔ support x = {∅} := by
+  unfold gradeSubmodule support
+  rw [blades_eq_basis_blades]
+  convert basisBlades.mem_span_image (m := x) (s := {s | #s = 0})
+  simp only [Finset.card_eq_zero, Set.setOf_eq_eq_singleton, Finset.coe_subset_singleton]
+  rw [Finset.subset_singleton_iff (s := (basisBlades.repr x).support) (a := ∅)]
+  simp [h]
+
+lemma blade_grade_zero (s : Finset σ) (h : Nontrivial R) : ζ[R] s ∈ gradeSubmodule 0 ↔ s = ∅ := by
+  rw [grade_zero_support]
+  unfold support
+  simp [blades_eq_basis_blades]
   sorry
+  exact blade_ne_zero s h
 
 lemma grade_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule n ↔ support x ⊆ {s : Finset σ | #s = n} := by
   sorry
 
+omit [DecidableEq σ] in
+lemma blade_grade_submodule (i : Finset σ) : ζ[R] i ∈ gradeSubmodule #i := by
+  unfold gradeSubmodule
+  apply subset_span
+  use i
+  simp
+
+omit [DecidableEq σ] in
 @[simp]
 lemma smul_blade_empty_mem_grade_zero (r : R) : r • ζ[R] (∅ : Finset σ) ∈ gradeSubmodule 0 := by
   apply Submodule.smul_mem
@@ -340,7 +360,16 @@ lemma smul_blade_empty_mem_grade_zero (r : R) : r • ζ[R] (∅ : Finset σ) �
 
 lemma grade_zero_decomp : GradedAlgebra.proj (gradeSubmodule (σ := σ) (R := R)) 0 = (basisBlades.coord ∅).smulRight (ζ ∅) := by
   apply basisBlades.ext
-  sorry
+  intro i
+  by_cases h : i = ∅
+  · simp [h, one_smul]
+    rw [←blades_eq_basis_blades, ←one_smul R (ζ ∅)]
+    exact DirectSum.decompose_of_mem_same (hx := smul_blade_empty_mem_grade_zero 1)
+  · simp [h]
+    ext
+    apply DirectSum.decompose_of_mem_ne (ℳ := gradeSubmodule) (x := basisBlades i) (j := 0) (i := #i)
+    · simp [←blades_eq_basis_blades, blade_grade_submodule i]
+    · simp [h]
 
 lemma grade_zero_decomp' (x : ZeonAlgebra σ R) : ((DirectSum.decompose gradeSubmodule) x) 0 = ⟨(basisBlades.repr x ∅) • ζ[R] ∅, by simp⟩ := by
   ext
@@ -348,11 +377,11 @@ lemma grade_zero_decomp' (x : ZeonAlgebra σ R) : ((DirectSum.decompose gradeSub
   congrm($(grade_zero_decomp) x)
 
 lemma scalar_basisBlades (x : ZeonAlgebra σ R) : scalar x = basisBlades.coord ∅ x := by
-  simp [scalar, grade_zero_R, grade_zero_decomp', ←basis_blades_eq_blades ∅]
+  simp [scalar, grade_zero_R, grade_zero_decomp', blades_eq_basis_blades]
 
 lemma scalar_eq_algebraMap : scalar ∘ (algebraMap R (ZeonAlgebra σ R)) = id := by sorry
 
-lemma algebraMap_eq_scalar : (algebraMap R (ZeonAlgebra σ R)) ∘ scalar = id := by sorry -- this is false, should be proj 0
+lemma algebraMap_scalar_comp : (algebraMap R (ZeonAlgebra σ R)) ∘ scalar = GradedAlgebra.projZeroAlgHom gradeSubmodule := by sorry
 
 omit [DecidableEq σ] in
 lemma nonempty_blade_nilpotent (s : Finset σ) : s.Nonempty → IsNilpotent (ζ[R] s) := by
@@ -371,9 +400,9 @@ lemma nilpotent_iff_scalar_nilpotent (x : ZeonAlgebra σ R) : IsNilpotent x ↔ 
     by_cases h1 : i = ∅
     · rw [←basisBlades.coord_apply, h1, ←scalar_basisBlades]
       simp [basisBlades, blade_empty, ←Algebra.algebraMap_eq_smul_one]
-      exact IsNilpotent.map hx (algebraMap R (ZeonAlgebra σ R)) -- using algebramap_eq_scalar seems nicer
+      exact IsNilpotent.map hx (algebraMap R (ZeonAlgebra σ R))
     · apply IsNilpotent.smul
-      rw [basis_blades_eq_blades]
+      rw [←blades_eq_basis_blades]
       exact nonempty_blade_nilpotent i (Finset.nonempty_iff_ne_empty.2 h1)
 
 @[simp]
@@ -394,18 +423,18 @@ lemma unit_iff_scalar_unit (x : ZeonAlgebra σ R) : IsUnit x ↔ IsUnit (scalar 
       by_cases h1 : basisBlades.repr x ∅ = 0
       · simp [h1]
         apply Finsupp.not_mem_support_iff.2 at h1
-        simp [basis_blades_eq_blades, Finset.erase_eq_of_not_mem h1]
+        simp [blades_eq_basis_blades, Finset.erase_eq_of_not_mem h1]
       · rw [←Finset.sum_insert (a := ∅) (f := fun i => (basisBlades.coord i) x • ζ i)]
         congr!
         · rw [Finset.insert_erase]
           exact Finsupp.mem_support_iff.2 h1
         · ext i
-          exact basis_blades_eq_blades i
+          simp [blades_eq_basis_blades]
         · simp [Finset.not_mem_sdiff_of_mem_right]
     rw [h]
     apply IsNilpotent.isUnit_add_left_of_commute _
     · rw [←scalar_basisBlades, blade_empty, ←Algebra.algebraMap_eq_smul_one]
-      exact RingHom.isUnit_map (algebraMap R (ZeonAlgebra σ R)) hx -- again would rather use algebra_map_eq_scalar but maybe it doesn't matter
+      exact RingHom.isUnit_map (algebraMap R (ZeonAlgebra σ R)) hx
     · exact
       Commute.all (∑ i ∈ (basisBlades.repr x).support.erase ∅, (basisBlades.coord i) x • ζ i)
         ((basisBlades.coord ∅) x • ζ ∅)
@@ -423,7 +452,6 @@ lemma unit_iff_scalar_unit' (x : ZeonAlgebra σ R) : IsUnit x ↔ IsUnit (scalar
     exact IsUnit.map (h := hx) (f := scalar)
   · intro hx
     convert IsNilpotent.isUnit_add_left_of_commute (isNilpotent_sub_proj_zero_self x) (hx.map (algebraMap R _)) (Commute.all _ _)
-    -- easy once you prove `algebraMap_eq_scalar`
     sorry
 
 example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n (ZeonAlgebra σ R)) :
