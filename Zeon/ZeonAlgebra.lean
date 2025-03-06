@@ -450,8 +450,63 @@ example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n (ZeonAlgebra σ 
   congr!
   exact AlgHom.map_det scalar x
 
-lemma mul_coord (x y : ZeonAlgebra σ R) (s : Finset σ) : basisBlades.coord s (x * y) = Finset.sum (s.powerset) (fun t => basisBlades.coord t x * basisBlades.coord (s \ t) y) := by
-  sorry
+lemma blade_coord (s t : Finset σ) (h : s ≠ t): (basisBlades (R := R).coord s) (ζ t) = 0 := by
+  simp [blades_eq_basis_blades, Finsupp.single_eq_of_ne (id (Ne.symm h))]
+
+lemma blade_coord_sum (s w v : Finset σ) (h : w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) =
+  (basisBlades (R := R).coord w) (ζ w) * (basisBlades.coord (s \ w)) (ζ v) := by
+  rw [←zero_add ((basisBlades.coord w) (ζ w) * (basisBlades.coord (s \ w)) (ζ v)), ←Finset.sum_erase_add (a := w) (h := h)]
+  congr
+  apply Finset.sum_eq_zero
+  intro x hx
+  rw [Finset.mem_erase] at hx
+  simp [blade_coord _ _ hx.left]
+
+lemma blade_coord_sum' (s w v : Finset σ) (h : ¬w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) = 0 := by
+  apply Finset.sum_eq_zero
+  intro x hx
+  simp [blade_coord (h := ne_of_mem_of_not_mem hx h)]
+
+lemma blade_coord_mul (s w v : Finset σ) (h : ¬s = w ∪ v) : (basisBlades.coord s) (ζ[R] w * ζ v) = 0 := by
+  by_cases g : Disjoint w v
+  · simp [blade_mul_disjoint _ _ g, blade_coord _ _ h]
+  · simp [blade_mul_inter _ _ g]
+
+lemma mul_coord (x y : ZeonAlgebra σ R) (s : Finset σ) : basisBlades.coord s (x * y) = ∑ t ∈ s.powerset, basisBlades.coord t x * basisBlades.coord (s \ t) y := by
+  have h (z : ZeonAlgebra σ R) : z ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by simp [blade_span]
+  induction (h x), (h y) using span_induction₂ with
+  | mem_mem x y hx hy =>
+    obtain ⟨w, rfl, rfl⟩ := hx
+    obtain ⟨v, rfl, rfl⟩ := hy
+    by_cases h1 : s = w ∪ v
+    · rw [blade_coord_sum (h := by rw [Finset.mem_powerset, h1]; exact Finset.subset_union_left)]
+      by_cases h2 : Disjoint w v
+      · rw [blade_mul_disjoint _ _ h2]
+        simp [blades_eq_basis_blades, Basis.repr_self, h1, Finsupp.single_eq_same, Finset.union_sdiff_cancel_right h2, Finset.union_sdiff_cancel_left h2]
+      · simp [blade_mul_inter _ _ h2, h1, Finset.union_sdiff_left, blade_coord (v \ w) v (h := by simp; exact fun a ↦ h2 (id (Disjoint.symm a)))]
+    · by_cases h2 : w ∈ s.powerset
+      · rw [blade_coord_sum (h := h2)]
+        have g : (basisBlades (R := R).repr (ζ v)) (s \ w) = 0 := by
+          apply blade_coord
+          contrapose h1
+          simp at h1
+          rw [Finset.mem_powerset] at h2
+          simp [←h1, Finset.union_sdiff_of_subset h2]
+        simp [g, blade_coord_mul _ _ _ h1]
+      · rw [blade_coord_sum' _ _ _ h2]
+        simp [blade_coord_mul _ _ _ h1]
+  | zero_left y hy => simp
+  | zero_right x hx => simp
+  | add_left x y z hx hy hz ha hb =>
+    simp only [add_mul, map_add, Finsupp.coe_add, Pi.add_apply, ha, hb, Finset.sum_add_distrib]
+  | add_right x y z hx hy hz ha hb =>
+    simp only [mul_add, map_add, Finsupp.coe_add, Pi.add_apply, ha, hb, Finset.sum_add_distrib]
+  | smul_left r x y hx hy ha =>
+    simp [ha, Finset.mul_sum, mul_assoc]
+  | smul_right r x y hx hy ha =>
+    simp [ha, Finset.mul_sum, ← mul_assoc]
+    congr
+    simp [mul_comm]
 
 end ZeonAlgebra
 
