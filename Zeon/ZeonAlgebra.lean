@@ -8,6 +8,7 @@ noncomputable section
 variable (σ R : Type*) [CommRing R]
 
 open MvPolynomial
+
 /-- The Zeon algebra -/
 def ZeonAlgebra := MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}
 
@@ -20,7 +21,8 @@ instance : Algebra R (ZeonAlgebra σ R) :=
   inferInstanceAs (Algebra R (MvPolynomial σ R ⧸ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)}))
 
 variable {σ R}
- /-- takes multivariate polynomials and returns the corresponding zeon -/
+
+ /-- The function that takes multivariate polynomials and returns the corresponding zeon -/
 def mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R := Ideal.Quotient.mkₐ _ _
 
 lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R) = Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} :=
@@ -28,7 +30,8 @@ lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R) =
 
 lemma mk_surjective : Function.Surjective (mk : MvPolynomial σ R → ZeonAlgebra σ R) :=
   Ideal.Quotient.mkₐ_surjective R _
-/-- the X_n terms in the ZeonAlgebra which square to 0 -/
+
+/-- The generators of the Zeon Algebra which square to 0 -/
 def generator (n : σ) : ZeonAlgebra σ R := mk (X n)
 
 @[simp]
@@ -54,10 +57,13 @@ lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → ZeonAl
   rw [Algebra.map_top, AlgHom.range_eq_top]
   exact mk_surjective
 
-/-- products of generators -/
+/-- Products of generators which span the algebra -/
 def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
 
+/-- Blade with scalars in R -/
 notation "ζ[" R "]" => blade (R := R)
+
+/-- Blade -/
 notation "ζ" => blade
 
 lemma blade_empty : ζ[R] (∅ : Finset σ) = 1 := by
@@ -89,8 +95,6 @@ lemma blade_mul (s t : Finset σ) :
   · rw [blade_mul_disjoint s t hst, if_pos hst]
   · rw [blade_mul_inter s t hst, if_neg hst]
 
--- After this we'll want to turn it into a basis using `Basis.mk`, but we'll need to prove
--- linear independence using `LinearIndependent.map`.
 lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) = ⊤ := by
   have h1 : 1 ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by
     rw [←blade_empty]
@@ -149,7 +153,7 @@ lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebr
 
   exact top_le_iff.1 h5
 
-/-- equivalence of finset and finitely supported set with values less than or equal to 1 -/
+/-- Equivalence of finset and finitely supported set with values less than or equal to 1 -/
 @[simps] def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ // ∀ x, f x ≤ 1} where
   toFun s := by
     refine ⟨?func, ?func_le⟩
@@ -224,6 +228,7 @@ lemma linearIndependent_blade : LinearIndependent R (blade : Finset σ → ZeonA
 
 open Submodule
 
+/-- The submodule spanned by blades of grade n -/
 def gradeSubmodule (n : ℕ) : Submodule R (ZeonAlgebra σ R) :=
   span R (ζ '' {s | #s = n})
 
@@ -292,6 +297,7 @@ lemma grade_zero_algebraMap_surjective :
 
 lemma blades_eq_basis_blades : ζ[R] = basisBlades (R := R) (σ := σ) := by simp [basisBlades]
 
+/-- Algebra equivalence from the scalars to the grade 0 submodule -/
 def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
   have g : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
         unfold gradeSubmodule
@@ -317,10 +323,12 @@ def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
       commutes' _ := by simp [Algebra.ofId_apply]
     }
 
+/-- Scalar part of a zeon -/
 def scalar : ZeonAlgebra σ R →ₐ[R] R :=
   (grade_zero_R (σ := σ) (R := R) |>.symm : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R) |>.comp <|
     GradedAlgebra.projZeroAlgHom' (gradeSubmodule (σ := σ) (R := R))
 
+/-- Support of a zeon -/
 abbrev support (x : ZeonAlgebra σ R) := (basisBlades.repr x).support
 
 lemma blade_ne_zero (s : Finset σ) (h : Nontrivial R) : ζ[R] s ≠ 0 := by
@@ -364,8 +372,7 @@ lemma blade_grade_submodule (i : Finset σ) : ζ[R] i ∈ gradeSubmodule #i := b
 
 lemma grade_mem_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule n ↔ ↑(support x) ⊆ {s : Finset σ | #s = n} := by
   unfold gradeSubmodule support
-  rw [blades_eq_basis_blades]
-  exact basisBlades.mem_span_image
+  rw [blades_eq_basis_blades, basisBlades.mem_span_image]
 
 omit [DecidableEq σ] in
 @[simp]
@@ -399,7 +406,7 @@ lemma scalar_basisBlades (x : ZeonAlgebra σ R) : scalar x = basisBlades.coord �
 lemma scalar_grade_zero_proj (x : ZeonAlgebra σ R) : scalar (DirectSum.decompose gradeSubmodule x 0 : ZeonAlgebra σ R) = scalar x := by
   simp [grade_zero_decomp', scalar_basisBlades, blades_eq_basis_blades]
 
-lemma scalar_eq_algebraMap : scalar ∘ (algebraMap R (ZeonAlgebra σ R)) = id := by
+lemma scalar_algebraMap_comp : scalar ∘ (algebraMap R (ZeonAlgebra σ R)) = id := by
   ext x
   simp
 
@@ -425,11 +432,9 @@ lemma nilpotent_iff_scalar_nilpotent (x : ZeonAlgebra σ R) : IsNilpotent x ↔ 
     intro i hi
     by_cases h1 : i = ∅
     · rw [←basisBlades.coord_apply, h1, ←scalar_basisBlades]
-      simp [basisBlades, blade_empty, ←Algebra.algebraMap_eq_smul_one]
-      exact IsNilpotent.map hx (algebraMap R (ZeonAlgebra σ R))
+      simp [basisBlades, blade_empty, ←Algebra.algebraMap_eq_smul_one, IsNilpotent.map hx (algebraMap R (ZeonAlgebra σ R))]
     · apply IsNilpotent.smul
-      rw [←blades_eq_basis_blades]
-      exact nonempty_blade_nilpotent i (Finset.nonempty_iff_ne_empty.2 h1)
+      simp [←blades_eq_basis_blades, nonempty_blade_nilpotent i (Finset.nonempty_iff_ne_empty.2 h1)]
 
 @[simp]
 lemma isNilpotent_sub_proj_zero_self (x : ZeonAlgebra σ R) : IsNilpotent (x - (DirectSum.decompose gradeSubmodule x 0 : ZeonAlgebra σ R)) := by
@@ -450,50 +455,50 @@ example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n (ZeonAlgebra σ 
   congr!
   exact AlgHom.map_det scalar x
 
-lemma blade_coord (s t : Finset σ) (h : s ≠ t): (basisBlades (R := R).coord s) (ζ t) = 0 := by
+lemma blade_coord_eq_zero (s t : Finset σ) (h : s ≠ t): (basisBlades (R := R).coord s) (ζ t) = 0 := by
   simp [blades_eq_basis_blades, Finsupp.single_eq_of_ne (id (Ne.symm h))]
 
-lemma blade_coord_sum (s w v : Finset σ) (h : w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) =
+lemma blade_coord_sum_subs (s w v : Finset σ) (h : w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) =
   (basisBlades (R := R).coord w) (ζ w) * (basisBlades.coord (s \ w)) (ζ v) := by
   rw [←zero_add ((basisBlades.coord w) (ζ w) * (basisBlades.coord (s \ w)) (ζ v)), ←Finset.sum_erase_add (a := w) (h := h)]
   congr
   apply Finset.sum_eq_zero
   intro x hx
   rw [Finset.mem_erase] at hx
-  simp [blade_coord _ _ hx.left]
+  simp [blade_coord_eq_zero _ _ hx.left]
 
-lemma blade_coord_sum' (s w v : Finset σ) (h : ¬w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) = 0 := by
+lemma blade_coord_sum_nsubs (s w v : Finset σ) (h : ¬w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) = 0 := by
   apply Finset.sum_eq_zero
   intro x hx
-  simp [blade_coord (h := ne_of_mem_of_not_mem hx h)]
+  simp [blade_coord_eq_zero (h := ne_of_mem_of_not_mem hx h)]
 
 lemma blade_coord_mul (s w v : Finset σ) (h : ¬s = w ∪ v) : (basisBlades.coord s) (ζ[R] w * ζ v) = 0 := by
   by_cases g : Disjoint w v
-  · simp [blade_mul_disjoint _ _ g, blade_coord _ _ h]
+  · simp [blade_mul_disjoint _ _ g, blade_coord_eq_zero _ _ h]
   · simp [blade_mul_inter _ _ g]
 
-lemma mul_coord (x y : ZeonAlgebra σ R) (s : Finset σ) : basisBlades.coord s (x * y) = ∑ t ∈ s.powerset, basisBlades.coord t x * basisBlades.coord (s \ t) y := by
+lemma coord_mul (x y : ZeonAlgebra σ R) (s : Finset σ) : basisBlades.coord s (x * y) = ∑ t ∈ s.powerset, basisBlades.coord t x * basisBlades.coord (s \ t) y := by
   have h (z : ZeonAlgebra σ R) : z ∈ Submodule.span R (Set.range (blade : Finset σ → ZeonAlgebra σ R)) := by simp [blade_span]
   induction (h x), (h y) using span_induction₂ with
   | mem_mem x y hx hy =>
     obtain ⟨w, rfl, rfl⟩ := hx
     obtain ⟨v, rfl, rfl⟩ := hy
     by_cases h1 : s = w ∪ v
-    · rw [blade_coord_sum (h := by rw [Finset.mem_powerset, h1]; exact Finset.subset_union_left)]
+    · rw [blade_coord_sum_subs (h := by rw [Finset.mem_powerset, h1]; exact Finset.subset_union_left)]
       by_cases h2 : Disjoint w v
       · rw [blade_mul_disjoint _ _ h2]
         simp [blades_eq_basis_blades, Basis.repr_self, h1, Finsupp.single_eq_same, Finset.union_sdiff_cancel_right h2, Finset.union_sdiff_cancel_left h2]
-      · simp [blade_mul_inter _ _ h2, h1, Finset.union_sdiff_left, blade_coord (v \ w) v (h := by simp; exact fun a ↦ h2 (id (Disjoint.symm a)))]
+      · simp [blade_mul_inter _ _ h2, h1, Finset.union_sdiff_left, blade_coord_eq_zero (v \ w) v (h := by simp; exact fun a ↦ h2 (id (Disjoint.symm a)))]
     · by_cases h2 : w ∈ s.powerset
-      · rw [blade_coord_sum (h := h2)]
+      · rw [blade_coord_sum_subs (h := h2)]
         have g : (basisBlades (R := R).repr (ζ v)) (s \ w) = 0 := by
-          apply blade_coord
+          apply blade_coord_eq_zero
           contrapose h1
           simp at h1
           rw [Finset.mem_powerset] at h2
           simp [←h1, Finset.union_sdiff_of_subset h2]
         simp [g, blade_coord_mul _ _ _ h1]
-      · rw [blade_coord_sum' _ _ _ h2]
+      · rw [blade_coord_sum_nsubs _ _ _ h2]
         simp [blade_coord_mul _ _ _ h1]
   | zero_left y hy => simp
   | zero_right x hx => simp

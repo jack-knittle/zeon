@@ -40,7 +40,6 @@ def Basis.dfinsuppEquiv
       let d := DFinsupp.basis h'
       exact n ≪≫ₗ d.repr.symm
 
--- write a lemma saying what the above does to a basis vector `b i` for `i : ι` and prove it.
 lemma Basis.dfinsuppEquiv_basis_vector [DecidableEq ι]
     (e : ι' ≃ Σ i, η i) (b : Basis ι' R M) (f : ι → Submodule R M)
     (hf : ∀ i, Submodule.span R (Set.range (b ∘ e.symm ∘ (Sigma.mk i))) = f i) (i : ι') :
@@ -81,6 +80,8 @@ abbrev Basis.directSumDecomposition [DecidableEq ι]
     exact Decomposition.ofLinearEquiv (fun i => f i) (b.dfinsuppEquiv e f hf) (Eq.trans (Basis.dfinsuppEquiv_symm e b f hf) (DFinsupp.lhom_ext'_iff.mpr (congrFun rfl)))
 
 open Finset
+
+/-- Equivalence between a finset and its cardinality -/
 @[simps] def Finset.cardEquiv (σ : Type*) : Finset σ ≃ Σ n : ℕ, {s : Finset σ // #s = n} where
   toFun := fun s => ⟨s.card, ⟨s, rfl⟩⟩
   invFun := fun ⟨n, ⟨s, hs⟩⟩ => s
@@ -96,6 +97,7 @@ open Finset
 
 variable {A σ : Type*}
 
+/-- Upgraded version of `GradedRing.projZeroRingHom` to an algebra homomorphism for a `GradedAlgebra`. -/
 abbrev GradedAlgebra.projZeroAlgHom [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
 [AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] (𝒜 : ι → Submodule R A)
 [GradedAlgebra 𝒜] : A →ₐ[R] A :=
@@ -104,6 +106,7 @@ abbrev GradedAlgebra.projZeroAlgHom [CommSemiring R] [Semiring A] [Algebra R A] 
     intro r
     exact DirectSum.decompose_of_mem_same (SetLike.algebraMap_mem_graded 𝒜 r) (x := (algebraMap R A) r) (ℳ := 𝒜)}
 
+/-- Upgraded version of `GradedRing.projZeroRingHom'` to an algebra homomorphism for a `GradedAlgebra`. -/
 abbrev GradedAlgebra.projZeroAlgHom' [CommSemiring R] [Semiring A] [Algebra R A] [DecidableEq ι]
 [AddCommMonoid ι] [PartialOrder ι] [CanonicallyOrderedAdd ι] (𝒜 : ι → Submodule R A)
 [GradedAlgebra 𝒜] : A →ₐ[R] 𝒜 0 :=
@@ -113,8 +116,3 @@ abbrev GradedAlgebra.projZeroAlgHom' [CommSemiring R] [Semiring A] [Algebra R A]
     simp
     rw [←GradedRing.projZeroRingHom'_apply_coe (a := (algebraMap R (𝒜 0)) r)]
     rfl}
-
--- other goals:
--- 0. Use the above to get a `GradedAlgebra` structure on `Zeon σ R`.
--- 1. upgraded `GradedRing.projZeroRingHom` (and it's primed version) to an algebra homomorphism when `A` is a graded algebra.
--- 2. after all of the above: construct an algebra equivalence between `R` and the (subtype of) grade-zero zeons.
