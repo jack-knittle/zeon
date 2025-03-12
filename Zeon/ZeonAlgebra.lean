@@ -1,5 +1,6 @@
 import Mathlib
 import Zeon.Basis
+import Zeon.Inverse
 
 open scoped Finset
 
@@ -331,8 +332,27 @@ def scalar : ZeonAlgebra σ R →ₐ[R] R :=
 /-- Support of a zeon -/
 abbrev support (x : ZeonAlgebra σ R) := (basisBlades.repr x).support
 
+lemma grade_mem_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule n ↔ ↑(support x) ⊆ {s : Finset σ | #s = n} := by
+  unfold gradeSubmodule support
+  rw [blades_eq_basis_blades, basisBlades.mem_span_image]
+
+omit [DecidableEq σ] in
+@[simp]
+lemma blade_grade_submodule (i : Finset σ) : ζ[R] i ∈ gradeSubmodule #i := by
+  unfold gradeSubmodule
+  apply subset_span
+  use i
+  simp
+
 lemma blade_ne_zero (s : Finset σ) (h : Nontrivial R) : ζ[R] s ≠ 0 := by
   exact linearIndependent_blade.ne_zero s (R := R)
+
+lemma grade_zero_support (x : ZeonAlgebra σ R) : support x = {∅} → x ∈ gradeSubmodule 0 := by
+  unfold gradeSubmodule support
+  intro h
+  rw [blades_eq_basis_blades, basisBlades.mem_span_image (m := x) (s := {s | #s = 0}), h]
+  simp only [Finset.card_eq_zero, Set.setOf_eq_eq_singleton]
+  exact Finset.singleton_subset_set_iff.mpr rfl
 
 lemma grade_zero_support_iff (x : ZeonAlgebra σ R) (h : x ≠ 0): x ∈ gradeSubmodule 0 ↔ support x = {∅} := by
   unfold gradeSubmodule support
@@ -342,6 +362,11 @@ lemma grade_zero_support_iff (x : ZeonAlgebra σ R) (h : x ≠ 0): x ∈ gradeSu
   rw [Finset.subset_singleton_iff (s := (basisBlades.repr x).support) (a := ∅)]
   simp [h]
 
+omit [DecidableEq σ] in
+@[simp]
+lemma blade_grade_zero : ζ[R] ∅ ∈ gradeSubmodule (σ := σ) 0 := by
+  exact blade_grade_submodule (i := ∅)
+
 lemma blade_grade_zero_iff (s : Finset σ) (h : Nontrivial R) : ζ[R] s ∈ gradeSubmodule 0 ↔ s = ∅ := by
   rw [grade_zero_support_iff]
   unfold support
@@ -349,30 +374,6 @@ lemma blade_grade_zero_iff (s : Finset σ) (h : Nontrivial R) : ζ[R] s ∈ grad
   rw [Finsupp.support_single_ne_zero (b := 1) (a := s) one_ne_zero]
   exact Finset.singleton_inj
   exact blade_ne_zero s h
-
-lemma blade_grade_zero (s : Finset σ) : s = ∅ → ζ[R] s ∈ gradeSubmodule 0 := by
-  intro h
-  unfold gradeSubmodule
-  simp [blades_eq_basis_blades, Finset.card_eq_zero, h]
-  exact mem_span_singleton_self (basisBlades ∅)
-
-lemma grade_zero_support (x : ZeonAlgebra σ R) : support x = {∅} → x ∈ gradeSubmodule 0 := by
-  unfold gradeSubmodule support
-  intro h
-  rw [blades_eq_basis_blades, basisBlades.mem_span_image (m := x) (s := {s | #s = 0}), h]
-  simp only [Finset.card_eq_zero, Set.setOf_eq_eq_singleton]
-  exact Finset.singleton_subset_set_iff.mpr rfl
-
-omit [DecidableEq σ] in
-lemma blade_grade_submodule (i : Finset σ) : ζ[R] i ∈ gradeSubmodule #i := by
-  unfold gradeSubmodule
-  apply subset_span
-  use i
-  simp
-
-lemma grade_mem_support (x : ZeonAlgebra σ R) : x ∈ gradeSubmodule n ↔ ↑(support x) ⊆ {s : Finset σ | #s = n} := by
-  unfold gradeSubmodule support
-  rw [blades_eq_basis_blades, basisBlades.mem_span_image]
 
 omit [DecidableEq σ] in
 @[simp]
@@ -406,6 +407,7 @@ lemma scalar_basisBlades (x : ZeonAlgebra σ R) : scalar x = basisBlades.coord �
 lemma scalar_grade_zero_proj (x : ZeonAlgebra σ R) : scalar (DirectSum.decompose gradeSubmodule x 0 : ZeonAlgebra σ R) = scalar x := by
   simp [grade_zero_decomp', scalar_basisBlades, blades_eq_basis_blades]
 
+@[simp]
 lemma scalar_algebraMap_comp : scalar ∘ (algebraMap R (ZeonAlgebra σ R)) = id := by
   ext x
   simp
@@ -449,7 +451,7 @@ lemma unit_iff_scalar_unit (x : ZeonAlgebra σ R) : IsUnit x ↔ IsUnit (scalar 
     rw [←Function.comp_apply (f := algebraMap R (ZeonAlgebra σ R)), algebraMap_scalar_comp]
     simp
 
-example {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n (ZeonAlgebra σ R)) :
+lemma matrix_unit_iff_scalar_unit {n : Type*} [Fintype n] [DecidableEq n] (x : Matrix n n (ZeonAlgebra σ R)) :
     IsUnit x ↔ IsUnit (x.map scalar) := by
   simp [Matrix.isUnit_iff_isUnit_det, unit_iff_scalar_unit]
   congr!
@@ -512,6 +514,15 @@ lemma coord_mul (x y : ZeonAlgebra σ R) (s : Finset σ) : basisBlades.coord s (
     simp [ha, Finset.mul_sum, ← mul_assoc]
     congr
     simp [mul_comm]
+
+lemma inv_coord_singleton (x : (ZeonAlgebra σ R)ˣ) (i : σ) : basisBlades.coord {i} (↑x⁻¹ : ZeonAlgebra σ R) * scalar (σ := σ) x = - (basisBlades.coord {i} x * scalar (↑x⁻¹ : ZeonAlgebra σ R)) := by
+  have h : basisBlades (R := R).coord {i} (x⁻¹ * x) = 0 := by
+    simp
+    rw [←blade_empty, blades_eq_basis_blades, basisBlades.repr_self, Finsupp.single_eq_of_ne (h := Ne.symm (Finset.singleton_ne_empty i))]
+  have g : basisBlades (R := R).coord {i} (x⁻¹ * x) = basisBlades.coord {i} (↑x⁻¹ : ZeonAlgebra σ R) * scalar (σ := σ) x + basisBlades.coord {i} x * scalar (↑x⁻¹ : ZeonAlgebra σ R) := by
+    rw [scalar_basisBlades, scalar_basisBlades, coord_mul, Finset.sum_eq_add_of_mem (a := {i}) (b := ∅)]
+    all_goals simp [mul_comm]
+  exact eq_neg_of_add_eq_zero_left (Eq.trans (Eq.symm (g)) h)
 
 end ZeonAlgebra
 
