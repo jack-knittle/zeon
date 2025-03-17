@@ -10,10 +10,9 @@ lemma inv_build (k : ℕ) : (r + d) * (∑ i in Finset.range k, (-1 : R) ^ i * (
   | zero => simp
   | succ n hn =>
     simp [Finset.sum_range_add]
-    rw [mul_add, hn, add_mul, pow_add]
-    simp [mul_comm, mul_assoc]
-    rw [←mul_assoc (r : R) (d ^ n), mul_comm (r : R), mul_assoc, ←mul_assoc (r : R) ((-1) ^ n),
-      mul_comm (r : R), mul_assoc, add_comm n 1, pow_add, pow_one, ←mul_assoc (r : R)]
+    rw [mul_add, hn, add_mul, pow_add, pow_add]
+    simp [mul_comm, ←mul_assoc]
+    rw [mul_comm (r : R)]
     simp
     ring
 

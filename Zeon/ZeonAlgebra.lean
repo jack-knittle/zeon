@@ -296,15 +296,17 @@ lemma grade_zero_algebraMap_surjective :
   use r
   exact SetLike.coe_eq_coe.mp hr
 
+omit [DecidableEq σ] in
+lemma grade_zero_blade_empty : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
+  unfold gradeSubmodule
+  intro x
+  simp [Finset.card_eq_zero]
+  exact (Submodule.mem_span_singleton (R := R) (x := x) (y := ζ ∅)).1
+
 lemma blades_eq_basis_blades : ζ[R] = basisBlades (R := R) (σ := σ) := by simp [basisBlades]
 
 /-- Algebra equivalence from the scalars to the grade 0 submodule -/
 def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
-  have g : ∀ x ∈ gradeSubmodule (R := R) (σ := σ) 0, ∃ r : R, r • ζ ∅ = x := by
-        unfold gradeSubmodule
-        intro x
-        simp [Finset.card_eq_zero]
-        exact (Submodule.mem_span_singleton (R := R) (x := x) (y := ζ ∅)).1
   refine
     {
       toFun := Algebra.ofId _ _
@@ -313,7 +315,7 @@ def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
         simp [Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, ← blade_empty, blades_eq_basis_blades]
       right_inv x := by
         simp
-        obtain ⟨r, hr⟩ := g x x.2
+        obtain ⟨r, hr⟩ := grade_zero_blade_empty (R := R) (σ := σ) x x.2
         rw [←hr, blades_eq_basis_blades]
         simp [Algebra.ofId]
         ext
@@ -523,6 +525,27 @@ lemma inv_coord_singleton (x : (ZeonAlgebra σ R)ˣ) (i : σ) : basisBlades.coor
     rw [scalar_basisBlades, scalar_basisBlades, coord_mul, Finset.sum_eq_add_of_mem (a := {i}) (b := ∅)]
     all_goals simp [mul_comm]
   exact eq_neg_of_add_eq_zero_left (Eq.trans (Eq.symm (g)) h)
+
+variable {α : Type*}
+
+instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] : IsScalarTower α s s where
+  smul_assoc a x y := Subtype.ext <| by
+    rw [← smul_one_smul R a x, ← smul_one_smul R a (x • y)]
+    exact smul_assoc _ (_ : R) (_ : R)
+
+instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] [SMulCommClass α R s] :
+    SMulCommClass α s s where
+  smul_comm a x y := Subtype.ext <| by
+    rw [← smul_one_smul R a, ← smul_one_smul R a y]
+    exact smul_comm _ (_ : R) (_ : R)
+
+variable (σ R) in
+open RingHom Unitization in
+def unitizationEquiv : Unitization R (ker (scalar (σ := σ) (R := R))) ≃ₐ[R] ZeonAlgebra σ R :=
+  sorry
+  -- you can use `Unitization.lift` to get the forward direction as an algebra homomorphism quite easily.
+  -- you should state the inverse function using `inl` and `inr`.
+  -- for proving the two functions are inverses, `induction x using Unitization.ind` is very helpful in one direction, and the other direction is trivial.
 
 end ZeonAlgebra
 
