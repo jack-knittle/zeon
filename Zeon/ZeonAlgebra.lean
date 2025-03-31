@@ -274,14 +274,7 @@ instance : DirectSum.Decomposition (gradeSubmodule : ℕ → Submodule R (ZeonAl
     rw [gradeSubmodule]
     congr!
     ext x
-    constructor
-    · rintro ⟨s, rfl⟩
-      use s
-      use s.2
-      simp [basisBlades]
-    · rintro ⟨s, hs, rfl⟩
-      use ⟨s, hs⟩
-      simp [basisBlades]
+    simp [basisBlades]
 
 instance : GradedAlgebra (gradeSubmodule : ℕ → Submodule R (ZeonAlgebra σ R)) where
 
@@ -538,6 +531,35 @@ instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] [SMulCommC
   smul_comm a x y := Subtype.ext <| by
     rw [← smul_one_smul R a, ← smul_one_smul R a y]
     exact smul_comm _ (_ : R) (_ : R)
+
+lemma finite_dimension [StrongRankCondition R] [Fintype σ] : Module.finrank R (ZeonAlgebra σ R) = 2 ^ Fintype.card σ := by
+  rw [Module.finrank_eq_card_basis (h := basisBlades), Fintype.card_finset] -- is this possible without strongrankcondition R?
+
+omit [DecidableEq σ] in
+lemma finite_grade [Fintype σ] (n : ℕ) : n > Fintype.card σ → gradeSubmodule (σ := σ) (R := R) n = ⊥ := by
+  intro h
+  rw [gradeSubmodule, ←span_empty]
+  congr!
+  rw [Set.image_eq_empty, Set.empty_def]
+  congr! with x
+  rw [iff_false, ←ne_eq]
+  apply Nat.ne_of_lt
+  exact (Nat.lt_of_le_of_lt (Finset.card_le_univ x) h) -- this is ugly
+
+lemma finite_blade_prod_nilpotent [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, ∃ t : Finset σ, x = blade t) (h1 : blade ∅ ∉ s): s.card > Fintype.card σ → s.prod = 0 := by
+  intro h2
+  sorry
+
+lemma finite_nilpotent [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.card > Fintype.card σ → s.prod = 0 := by
+  intro g
+  sorry
+
+lemma finite_nilpotent' [Fintype σ] (x : ZeonAlgebra σ R) (h : scalar x = 0) : x ^ (Fintype.card σ + 1) = 0 := by
+  rw [←Multiset.prod_replicate]
+  apply finite_nilpotent
+  · intro y hy
+    rw [Multiset.eq_of_mem_replicate hy, h]
+  · simp
 
 variable (σ R) in
 open RingHom Unitization in
