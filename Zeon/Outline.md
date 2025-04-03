@@ -24,6 +24,6 @@
 
 - If `[Fintype σ]`, then `gradeSubmodule n = ⊥` if `n > Fintype σ`
 
-- If `[Fintype σ]`, `s : Multiset (ZeonAlgebra σ R)`, `∀ i, scalar (x i) = 0`, then `s.prod = 0` if `s.card > #s`.
+- If `[Fintype σ]`, `s : Multiset (ZeonAlgebra σ R)`, `∀ i, scalar (x i) = 0`, then `s.prod = 0` if `s.card > #σ`.
 
 - If `[Fintype σ]`, `x : ZeonAlgebra σ R`, `scalar x = 0`, `x ^ n = 0` if `n > #s`.

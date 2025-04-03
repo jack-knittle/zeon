@@ -32,7 +32,7 @@ lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] ZeonAlgebra σ R) =
 lemma mk_surjective : Function.Surjective (mk : MvPolynomial σ R → ZeonAlgebra σ R) :=
   Ideal.Quotient.mkₐ_surjective R _
 
-/-- The generators of the Zeon Algebra which square to 0 -/
+/-- The generators of the algebra which square to 0 -/
 def generator (n : σ) : ZeonAlgebra σ R := mk (X n)
 
 @[simp]
@@ -58,7 +58,7 @@ lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → ZeonAl
   rw [Algebra.map_top, AlgHom.range_eq_top]
   exact mk_surjective
 
-/-- Products of generators which span the algebra -/
+/-- The products of distinct generators which span the algebra -/
 def blade (s : Finset σ) : ZeonAlgebra σ R := ∏ i in s, generator (R := R) i
 
 /-- Blade with scalars in R -/
@@ -319,9 +319,9 @@ def grade_zero_R : R ≃ₐ[R] gradeSubmodule (σ := σ) (R := R) 0 := by
       commutes' _ := by simp [Algebra.ofId_apply]
     }
 
-/-- Scalar part of a zeon -/
+/-- The scalar part of a zeon -/
 def scalar : ZeonAlgebra σ R →ₐ[R] R :=
-  (grade_zero_R (σ := σ) (R := R) |>.symm : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R) |>.comp <|
+  (grade_zero_R (σ := σ) (R := R) |>.symm : gradeSubmodule (σ := σ) (R := R) 0 →ₐ[R] R).comp <|
     GradedAlgebra.projZeroAlgHom' (gradeSubmodule (σ := σ) (R := R))
 
 /-- Support of a zeon -/
@@ -532,7 +532,7 @@ instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] [SMulCommC
     rw [← smul_one_smul R a, ← smul_one_smul R a y]
     exact smul_comm _ (_ : R) (_ : R)
 
-lemma finite_dimension [StrongRankCondition R] [Fintype σ] : Module.finrank R (ZeonAlgebra σ R) = 2 ^ Fintype.card σ := by
+lemma finite_dimension [Nontrivial R] [Fintype σ] : Module.finrank R (ZeonAlgebra σ R) = 2 ^ Fintype.card σ := by
   rw [Module.finrank_eq_card_basis (h := basisBlades), Fintype.card_finset] -- is this possible without strongrankcondition R?
 
 omit [DecidableEq σ] in
