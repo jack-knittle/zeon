@@ -550,17 +550,22 @@ lemma finite_blade_prod_nilpotent [Fintype σ] (s : Multiset (ZeonAlgebra σ R))
   intro h2
   sorry
 
+open Classical in
+lemma coord_prod (x : List (ZeonAlgebra σ R)) (s : Finset σ) :
+    letI parts : Finset (Fin x.length → Finset s) := {f | Finset.univ.sup f = Finset.univ ∧ Pairwise (Function.onFun Disjoint f)}
+    basisBlades.coord s x.prod = ∑ f ∈ parts, ∏ i, basisBlades.coord ((f i).map (Function.Embedding.subtype _)) x[i] := by
+  sorry
+
 -- DirectSum.decomposeAlgEquiv
 lemma scalar_eq_zero_iff_directSum_zero (x : ZeonAlgebra σ R) : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0 := by
   sorry
 
 -- then prove a generic lemma about externally graded algebras indexed by `ℕ`.
 
-lemma scalar_eq_zero_iff_mem_iSup_gradeSubmodule {x : ZeonAlgebra σ R} : scalar x = 0 ↔ x ∈ ⨆ n > 0, gradeSubmodule n := by
+lemma scalar_eq_zero_iff_mem_iSup_gradeSubmodule {x : ZeonAlgebra σ R} : scalar x = 0 ↔ x ∈ ⨆ n ≥ 1, gradeSubmodule n := by
   sorry
 
-open Multiset in
-lemma foo [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.prod ∈ ⨆ n > s.card, gradeSubmodule n := by
+lemma foo [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.prod ∈ ⨆ n ≥ s.card, gradeSubmodule n := by
   sorry
 
 lemma finite_nilpotent [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.card > Fintype.card σ → s.prod = 0 := by
