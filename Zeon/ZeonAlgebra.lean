@@ -550,6 +550,19 @@ lemma finite_blade_prod_nilpotent [Fintype σ] (s : Multiset (ZeonAlgebra σ R))
   intro h2
   sorry
 
+-- DirectSum.decomposeAlgEquiv
+lemma scalar_eq_zero_iff_directSum_zero (x : ZeonAlgebra σ R) : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0 := by
+  sorry
+
+-- then prove a generic lemma about externally graded algebras indexed by `ℕ`.
+
+lemma scalar_eq_zero_iff_mem_iSup_gradeSubmodule {x : ZeonAlgebra σ R} : scalar x = 0 ↔ x ∈ ⨆ n > 0, gradeSubmodule n := by
+  sorry
+
+open Multiset in
+lemma foo [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.prod ∈ ⨆ n > s.card, gradeSubmodule n := by
+  sorry
+
 lemma finite_nilpotent [Fintype σ] (s : Multiset (ZeonAlgebra σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.card > Fintype.card σ → s.prod = 0 := by
   intro g
   sorry
