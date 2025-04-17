@@ -35,8 +35,7 @@ lemma mk_surjective : Function.Surjective (mk : MvPolynomial σ R → Zeon σ R)
 /-- The generator of the algebra indexed by n -/
 def generator (n : σ) : Zeon σ R := mk (X n)
 
-/-- The defining feature of zeon algebras -/
-@[simp]
+/-- The defining feature of the algebra, that the generators square to 0 -/
 lemma gen_sq (n : σ) : (generator n (R := R)) ^ 2 = 0 := by
   have h : (X n ^ 2 : MvPolynomial σ R) ∈ Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} := by
     apply Ideal.subset_span
@@ -532,7 +531,7 @@ instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] : IsScalar
     rw [← smul_one_smul R a x, ← smul_one_smul R a (x • y)]
     exact smul_assoc _ (_ : R) (_ : R)
 
-instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] [SMulCommClass α R s] :
+instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] :
     SMulCommClass α s s where
   smul_comm a x y := Subtype.ext <| by
     rw [← smul_one_smul R a, ← smul_one_smul R a y]
