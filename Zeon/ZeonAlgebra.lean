@@ -462,7 +462,7 @@ lemma matrix_unit_iff_scalar_unit {n : Type*} [Fintype n] [DecidableEq n] (x : M
     IsUnit x ↔ IsUnit (x.map scalar) := by
   simp [Matrix.isUnit_iff_isUnit_det, unit_iff_scalar_unit, AlgHom.map_det scalar x]
 
-/-- Useful lemmas we need to prove coord_mul -/
+/-- Useful lemmas we need to prove `coord_mul` -/
 
 lemma blade_coord_eq_zero (s t : Finset σ) (h : s ≠ t): (basisBlades (R := R).coord s) (ζ t) = 0 := by
   simp [blades_eq_basis_blades, Finsupp.single_eq_of_ne (id (Ne.symm h))]
@@ -515,7 +515,7 @@ lemma coord_mul (x y : Zeon σ R) (s : Finset σ) : basisBlades.coord s (x * y) 
     congr
     simp [mul_comm]
 
-/-- Coordinate on singleton blades for the inverse; corollary to coord_mul -/
+/-- Coordinate on singleton blades for the inverse; corollary of `coord_mul` -/
 lemma inv_coord_singleton (x : (Zeon σ R)ˣ) (i : σ) : basisBlades.coord {i} (↑x⁻¹ : Zeon σ R) * scalar (σ := σ) x = - (basisBlades.coord {i} x * scalar (↑x⁻¹ : Zeon σ R)) := by
   have h : basisBlades (R := R).coord {i} (x⁻¹ * x) = 0 := by
     simp
@@ -539,6 +539,7 @@ instance (s : Ideal R) [SMul α R] [SMul α s] [IsScalarTower α R s] [SMulCommC
     exact smul_comm _ (_ : R) (_ : R)
 
 /-- Results for σ as a Fintype -/
+
 lemma finite_dimension [Nontrivial R] [Fintype σ] : Module.finrank R (Zeon σ R) = 2 ^ Fintype.card σ := by
   rw [Module.finrank_eq_card_basis (h := basisBlades), Fintype.card_finset]
 
@@ -551,49 +552,32 @@ lemma finite_grade [Fintype σ] (n : ℕ) : n > Fintype.card σ → gradeSubmodu
   congr! with x
   rw [iff_false, ←ne_eq]
   apply Nat.ne_of_lt
-  exact (Nat.lt_of_le_of_lt (Finset.card_le_univ x) h) -- this is ugly
+  exact (Nat.lt_of_le_of_lt (Finset.card_le_univ x) h)
 
-lemma finite_blade_prod_nilpotent [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, ∃ t : Finset σ, x = blade t) (h1 : blade ∅ ∉ s): s.card > Fintype.card σ → s.prod = 0 := by
-  intro h2
-  sorry
+/- Results we have yet to prove -/
 
 open Classical in
-/-- General version of coord_mul for a product of many zeons. -/
-lemma coord_prod (x : List (Zeon σ R)) (s : Finset σ) :
+/-- General version of coord_mul for a product of many zeons. (likely not worth proving) -/
+proof_wanted coord_prod (x : List (Zeon σ R)) (s : Finset σ) :
     letI parts : Finset (Fin x.length → Finset s) := {f | Finset.univ.sup f = Finset.univ ∧ Pairwise (Function.onFun Disjoint f)}
-    basisBlades.coord s x.prod = ∑ f ∈ parts, ∏ i, basisBlades.coord ((f i).map (Function.Embedding.subtype _)) x[i] := by
-  sorry
+    basisBlades.coord s x.prod = ∑ f ∈ parts, ∏ i, basisBlades.coord ((f i).map (Function.Embedding.subtype _)) x[i]
 
--- DirectSum.decomposeAlgEquiv
-lemma scalar_eq_zero_iff_directSum_zero (x : Zeon σ R) : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0 := by
-  sorry
+/-- Bulding up to `finite_nilpotent` -/
 
--- then prove a generic lemma about externally graded algebras indexed by `ℕ`.
+proof_wanted scalar_eq_zero_iff_directSum_zero (x : Zeon σ R) : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0
 
-lemma scalar_eq_zero_iff_mem_iSup_gradeSubmodule {x : Zeon σ R} : scalar x = 0 ↔ x ∈ ⨆ n ≥ 1, gradeSubmodule n := by
-  sorry
+proof_wanted scalar_eq_zero_iff_mem_iSup_gradeSubmodule {x : Zeon σ R} : scalar x = 0 ↔ x ∈ ⨆ n ≥ 1, gradeSubmodule n
 
-lemma foo [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.prod ∈ ⨆ n ≥ s.card, gradeSubmodule n := by
-  sorry
+proof_wanted foo [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.prod ∈ ⨆ n ≥ s.card, gradeSubmodule n
 
-lemma finite_nilpotent [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.card > Fintype.card σ → s.prod = 0 := by
-  intro g
-  sorry
+omit [DecidableEq σ] in
+proof_wanted finite_blade_prod_nilpotent [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, ∃ t : Finset σ, x = blade t) (h1 : blade ∅ ∉ s): s.card > Fintype.card σ → s.prod = 0
 
-lemma finite_nilpotent' [Fintype σ] (x : Zeon σ R) (h : scalar x = 0) : x ^ (Fintype.card σ + 1) = 0 := by
-  rw [←Multiset.prod_replicate]
-  apply finite_nilpotent
-  · intro y hy
-    rw [Multiset.eq_of_mem_replicate hy, h]
-  · simp
+/-- For finite index set with cardinality n, the product of k zeons with 0 scalar parts, where k > n, is 0. -/
+proof_wanted finite_nilpotent [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) : s.card > Fintype.card σ → s.prod = 0
 
-variable (σ R) in
-open RingHom Unitization in
-def unitizationEquiv : Unitization R (ker (scalar (σ := σ) (R := R))) ≃ₐ[R] Zeon σ R :=
-  sorry
-  -- you can use `Unitization.lift` to get the forward direction as an algebra homomorphism quite easily.
-  -- you should state the inverse function using `inl` and `inr`.
-  -- for proving the two functions are inverses, `induction x using Unitization.ind` is very helpful in one direction, and the other direction is trivial.
+/-- Corollary of `finite_nilpotent`. -/
+proof_wanted finite_nilpotent' [Fintype σ] (x : Zeon σ R) (h : scalar x = 0) : x ^ (Fintype.card σ + 1) = 0
 
 end Zeon
 

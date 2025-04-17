@@ -4,6 +4,7 @@ noncomputable section
 
 variable {R : Type*} [CommRing R] (r : Rˣ) (d : R)
 
+ /-- General formula to help build the inverse of a nilpotent thing and an invertible thing -/
 lemma inv_build (k : ℕ) : (r + d) * (∑ i in Finset.range k, (-1 : R) ^ i * (r⁻¹) ^ (i + 1) * d ^ i)
   = 1 + (-1) ^ (k + 1) * (r⁻¹) ^ k * d ^ k := by -- using k + 1 as the power on -1 instead of k - 1 to avoid natural number issues
   induction k with
@@ -16,6 +17,7 @@ lemma inv_build (k : ℕ) : (r + d) * (∑ i in Finset.range k, (-1 : R) ^ i * (
     simp
     ring
 
+/-- Application of `inv_build`, taking k to be the index of nilpotency of d -/
 @[simps]
 def Units.add_nilpotent (hd : IsNilpotent d) : Rˣ where
   val := r + d
