@@ -9,7 +9,9 @@ Click [here](https://lean-lang.org/lean4/doc/quickstart.html) for intstructions 
 
 ## Helpful Links
 [mathlib overview](https://leanprover-community.github.io/mathlib-overview.html)
+
 [mathlib docs](https://leanprover-community.github.io/mathlib4_docs/index.html)
+
 [Lean community](https://leanprover-community.github.io/)
 
 ## Authors
