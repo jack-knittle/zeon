@@ -9,4 +9,5 @@ Click [here](https://lean-lang.org/lean4/doc/quickstart.html) for intstructions 
 
 ## Authors
 Jack Knittle - jknittl@siue.edu
+
 Jireh Loreaux - jloreau@siue.edu
