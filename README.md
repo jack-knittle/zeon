@@ -7,6 +7,11 @@ Zeon algrebas are abelian algebras with the property that each of the generators
 ## Installing
 Click [here](https://lean-lang.org/lean4/doc/quickstart.html) for intstructions on setting up Lean in VSCode.
 
+## Helpful Links
+[mathlib overview](https://leanprover-community.github.io/mathlib-overview.html)
+
+[mathlib docs](https://leanprover-community.github.io/mathlib4_docs/index.html)
+
 ## Authors
 Jack Knittle - jknittl@siue.edu
 
