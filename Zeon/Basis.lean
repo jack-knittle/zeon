@@ -77,7 +77,8 @@ abbrev Basis.directSumDecomposition [DecidableEq ι]
     (e : ι' ≃ Σ i, η i) (b : Basis ι' R M) (f : ι → Submodule R M)
     (hf : ∀ i, Submodule.span R (Set.range (b ∘ e.symm ∘ (Sigma.mk i))) = f i) :
     DirectSum.Decomposition f := by
-    exact Decomposition.ofLinearEquiv (fun i => f i) (b.dfinsuppEquiv e f hf) (Eq.trans (Basis.dfinsuppEquiv_symm e b f hf) (DFinsupp.lhom_ext'_iff.mpr (congrFun rfl)))
+    exact Decomposition.ofLinearEquiv (fun i => f i) (b.dfinsuppEquiv e f hf)
+      (Eq.trans (Basis.dfinsuppEquiv_symm e b f hf) (DFinsupp.lhom_ext'_iff.mpr (congrFun rfl)))
 
 open Finset
 

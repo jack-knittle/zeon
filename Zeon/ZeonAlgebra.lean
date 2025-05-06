@@ -1,6 +1,7 @@
 import Mathlib
 import Zeon.Basis
 import Zeon.Inverse
+import Zeon.MinGradeProd
 
 open scoped Finset
 
@@ -99,32 +100,36 @@ lemma blade_mul (s t : Finset σ) :
   · rw [blade_mul_disjoint s t hst, if_pos hst]
   · rw [blade_mul_inter s t hst, if_neg hst]
 
+
+
+
+
+
+
 /-- The blades span the algebra -/
 lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) = ⊤ := by
+
+  -- 1 is in the span of the blades
   have h1 : 1 ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) := by
     rw [←blade_empty]
     apply Submodule.subset_span
     exact Set.mem_range_self ∅
 
-  have h2 : ∀ (x y : Zeon σ R),  x ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) → y ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) → x * y ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) := by
-    have h : Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) = Submodule.span R (Set.range (blade : Finset σ → Zeon σ R) ∪ {0}) := by
-      simp
+  -- the span is closed under multiplication
+  have h2 : ∀ (x y : Zeon σ R),  x ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) →
+      y ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) →
+      x * y ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) := by
 
-    have h' (s t : Finset σ) : blade s * blade t ∈ Set.range (blade : Finset σ → Zeon σ R) ∪ {0} := by
-      rw [blade_mul]
-      by_cases hst : Disjoint s t
-      all_goals simp [hst]
-
+    -- span_induction₂
     intros x y hx hy
-    rw [h] at hx hy ⊢
     induction hx, hy using Submodule.span_induction₂ with
+      -- the key step. Using blade multiplication rules, the product of two blades
+      -- is either a blade or 0, depending on whether the two blades are disjoint
     | mem_mem x y hx hy =>
+      obtain ⟨s, rfl⟩ := hx; obtain ⟨t, rfl⟩ := hy
+      by_cases hst : Disjoint s t
       apply Submodule.subset_span
-      simp only [Set.union_singleton, Set.mem_insert_iff, Set.mem_range] at hx hy
-      obtain (rfl | ⟨s, rfl⟩) := hx <;> obtain (rfl | ⟨t, rfl⟩) := hy
-      rotate_right
-      · exact h' s t
-      all_goals simp
+      all_goals simp [hst, blade_mul]
     | zero_left y hy => simp
     | zero_right x hx => simp
     | add_left x y z hx hy hz h₁ h₂ =>
@@ -140,7 +145,9 @@ lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)
       rw [mul_smul_comm]
       exact Submodule.smul_mem _ r h
 
-  have h3 : Set.range (generator : σ → Zeon σ R) ⊆ (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
+  -- the span (as a subalgebra) contains the generators
+  have h3 : Set.range (generator : σ → Zeon σ R) ⊆
+      (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
     intro x hx
     obtain ⟨s, rfl⟩ := Set.mem_range.1 hx
     apply Submodule.subset_span
@@ -149,14 +156,27 @@ lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)
     use {s}
     rw [Finset.prod_singleton]
 
-  have h4 : Algebra.adjoin R (Set.range (generator : σ → Zeon σ R)) ≤ (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
+  -- thus, the span is larger than the smallest subalgebra containing the generators
+  have h4 : Algebra.adjoin R (Set.range (generator : σ → Zeon σ R)) ≤
+      (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
     exact Algebra.adjoin_le h3
 
+  -- thus, the span is larger than the whole algebra
   have h5 : ⊤ ≤ (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
     rw [←adjoin_generators]
     exact h4
 
+  -- thus, the span is the whole algebra
   exact top_le_iff.1 h5
+
+
+
+
+
+
+
+
+
 
 /-- Equivalence of finset and finitely supported set with values less than or equal to 1 -/
 @[simps] def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ // ∀ x, f x ≤ 1} where
@@ -451,7 +471,7 @@ lemma isNilpotent_sub_proj_zero_self (x : Zeon σ R) : IsNilpotent (x - (DirectS
 lemma unit_iff_scalar_unit (x : Zeon σ R) : IsUnit x ↔ IsUnit (scalar x) := by
   constructor
   · intro hx
-    exact IsUnit.map (h := hx) (f := scalar)
+    exact IsUnit.map scalar hx
   · intro hx
     convert IsNilpotent.isUnit_add_left_of_commute (isNilpotent_sub_proj_zero_self x) (hx.map (algebraMap R _)) (Commute.all _ _)
     rw [←Function.comp_apply (f := algebraMap R (Zeon σ R)), algebraMap_scalar_comp]
@@ -558,8 +578,32 @@ lemma finite_grade [Fintype σ] (n : ℕ) : n > Fintype.card σ → gradeSubmodu
 open Classical in
 /-- General version of coord_mul for a product of many zeons. (likely not worth proving) -/
 proof_wanted coord_prod (x : List (Zeon σ R)) (s : Finset σ) :
-    letI parts : Finset (Fin x.length → Finset s) := {f | Finset.univ.sup f = Finset.univ ∧ Pairwise (Function.onFun Disjoint f)}
-    basisBlades.coord s x.prod = ∑ f ∈ parts, ∏ i, basisBlades.coord ((f i).map (Function.Embedding.subtype _)) x[i]
+    letI parts : Finset (Fin x.length → Finset s) :=
+      {f | Finset.univ.sup f = Finset.univ ∧ Pairwise (Function.onFun Disjoint f)}
+    basisBlades.coord s x.prod =
+      ∑ f ∈ parts, ∏ i, basisBlades.coord ((f i).map (Function.Embedding.subtype _)) x[i]
+
+open DirectSum
+
+lemma scalar_eq_zero_iff_directSum_zero_eq_zero {x : Zeon σ R} : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0 := by
+  unfold scalar grade_zero_R
+  simp
+
+  sorry
+
+lemma mem_biSup_decompose_support_gradeSubmodule [(i : ℕ) → (x : gradeSubmodule (σ := σ) (R := R) i) → Decidable (x ≠ 0)] (x : Zeon σ R) :
+    x ∈ (⨆ n ∈ (decompose gradeSubmodule x).support, gradeSubmodule n) := by
+  --convert Submodule.sum_mem_iSup (f := decompose gradeSubmodule x) (p := gradeSubmodule)
+  --simp only [DirectSum.sum_support_of]
+  sorry
+
+lemma multisetProd_mem_biSup_gradeSubmodule (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) :
+    s.prod ∈ ⨆ n ≥ s.card, gradeSubmodule n :=
+  sorry
+
+lemma multisetProd_eq_zero_of_card [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0)
+    (h_card : Fintype.card σ < s.card) : s.prod = 0 :=
+  sorry
 
 /-- Bulding up to `finite_nilpotent` -/
 
