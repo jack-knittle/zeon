@@ -2,6 +2,9 @@ import Mathlib
 
 noncomputable section
 
+lemma foo {F : Type} [Field F] (x : F) (hx : x ≠ 0) : x * x⁻¹ = 1 := by
+  simp [hx]
+
 variable {R : Type*} [CommRing R] (r : Rˣ) (d : R)
 
  /-- General formula to help build the inverse of a nilpotent thing and an invertible thing -/

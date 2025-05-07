@@ -104,70 +104,51 @@ lemma blade_mul (s t : Finset σ) :
 
 
 
-
+open Submodule Set
 
 /-- The blades span the algebra -/
-lemma blade_span : Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) = ⊤ := by
+lemma blade_span : span R (range (blade : Finset σ → Zeon σ R)) = ⊤ := by
 
   -- 1 is in the span of the blades
-  have h1 : 1 ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) := by
+  have h1 : 1 ∈ span R (range (blade : Finset σ → Zeon σ R)) := by
     rw [←blade_empty]
-    apply Submodule.subset_span
-    exact Set.mem_range_self ∅
+    apply subset_span
+    exact mem_range_self ∅
 
   -- the span is closed under multiplication
-  have h2 : ∀ (x y : Zeon σ R),  x ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) →
-      y ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) →
-      x * y ∈ Submodule.span R (Set.range (blade : Finset σ → Zeon σ R)) := by
+  have h2 : ∀ (x y : Zeon σ R),  x ∈ span R (range (blade : Finset σ → Zeon σ R)) →
+      y ∈ span R (range (blade : Finset σ → Zeon σ R)) →
+      x * y ∈ span R (range (blade : Finset σ → Zeon σ R)) := by
 
     -- span_induction₂
     intros x y hx hy
-    induction hx, hy using Submodule.span_induction₂ with
+    induction hx, hy using span_induction₂ with
       -- the key step. Using blade multiplication rules, the product of two blades
       -- is either a blade or 0, depending on whether the two blades are disjoint
     | mem_mem x y hx hy =>
       obtain ⟨s, rfl⟩ := hx; obtain ⟨t, rfl⟩ := hy
       by_cases hst : Disjoint s t
-      apply Submodule.subset_span
+      apply subset_span
       all_goals simp [hst, blade_mul]
     | zero_left y hy => simp
     | zero_right x hx => simp
-    | add_left x y z hx hy hz h₁ h₂ =>
-      rw [add_mul]
-      exact add_mem h₁ h₂
-    | add_right x y z hx hy hz h₁ h₂ =>
-      rw [mul_add]
-      exact add_mem h₁ h₂
-    | smul_left r x y hx hy h =>
-      rw [smul_mul_assoc]
-      exact Submodule.smul_mem _ r h
-    | smul_right r x y hx hy h =>
-      rw [mul_smul_comm]
-      exact Submodule.smul_mem _ r h
+    | add_left x y z hx hy hz h₁ h₂ => simpa [add_mul] using add_mem h₁ h₂
+    | add_right x y z hx hy hz h₁ h₂ => simpa [mul_add] using add_mem h₁ h₂
+    | smul_left r x y hx hy h => simpa [smul_mul_assoc] using smul_mem _ r h
+    | smul_right r x y hx hy h => simpa [mul_smul_comm] using smul_mem _ r h
 
-  -- the span (as a subalgebra) contains the generators
-  have h3 : Set.range (generator : σ → Zeon σ R) ⊆
-      (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
-    intro x hx
-    obtain ⟨s, rfl⟩ := Set.mem_range.1 hx
-    apply Submodule.subset_span
-    unfold blade
-    apply Set.mem_range.2
-    use {s}
-    rw [Finset.prod_singleton]
+  -- thus the span forms a subalgebra
+  -- it suffices to show that the span of the blades, as a subalgebra, is the whole algebra
+  suffices (span R (range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 = ⊤ from
+    congr($(this).toSubmodule)
 
-  -- thus, the span is larger than the smallest subalgebra containing the generators
-  have h4 : Algebra.adjoin R (Set.range (generator : σ → Zeon σ R)) ≤
-      (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
-    exact Algebra.adjoin_le h3
+  -- which is true because the span contains the generators of the algebra
+  rw [eq_top_iff, ← adjoin_generators]
+  refine Algebra.adjoin_le ?_
+  rintro - ⟨s, rfl⟩
+  exact subset_span ⟨{s}, by simp [blade]⟩
 
-  -- thus, the span is larger than the whole algebra
-  have h5 : ⊤ ≤ (Submodule.span R (Set.range (blade : Finset σ → Zeon σ R))).toSubalgebra h1 h2 := by
-    rw [←adjoin_generators]
-    exact h4
 
-  -- thus, the span is the whole algebra
-  exact top_le_iff.1 h5
 
 
 
@@ -585,25 +566,23 @@ proof_wanted coord_prod (x : List (Zeon σ R)) (s : Finset σ) :
 
 open DirectSum
 
-lemma scalar_eq_zero_iff_directSum_zero_eq_zero {x : Zeon σ R} : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0 := by
-  unfold scalar grade_zero_R
-  simp
+proof_wanted scalar_eq_zero_iff_directSum_zero_eq_zero {x : Zeon σ R} : scalar x = 0 ↔ DirectSum.decompose gradeSubmodule x 0 = 0
+  --unfold scalar grade_zero_R
+  --simp
 
-  sorry
 
-lemma mem_biSup_decompose_support_gradeSubmodule [(i : ℕ) → (x : gradeSubmodule (σ := σ) (R := R) i) → Decidable (x ≠ 0)] (x : Zeon σ R) :
-    x ∈ (⨆ n ∈ (decompose gradeSubmodule x).support, gradeSubmodule n) := by
+proof_wanted mem_biSup_decompose_support_gradeSubmodule [(i : ℕ) → (x : gradeSubmodule (σ := σ) (R := R) i) → Decidable (x ≠ 0)] (x : Zeon σ R) :
+    x ∈ (⨆ n ∈ (decompose gradeSubmodule x).support, gradeSubmodule n)
   --convert Submodule.sum_mem_iSup (f := decompose gradeSubmodule x) (p := gradeSubmodule)
   --simp only [DirectSum.sum_support_of]
-  sorry
 
-lemma multisetProd_mem_biSup_gradeSubmodule (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) :
-    s.prod ∈ ⨆ n ≥ s.card, gradeSubmodule n :=
-  sorry
 
-lemma multisetProd_eq_zero_of_card [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0)
-    (h_card : Fintype.card σ < s.card) : s.prod = 0 :=
-  sorry
+proof_wanted multisetProd_mem_biSup_gradeSubmodule (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0) :
+    s.prod ∈ ⨆ n ≥ s.card, gradeSubmodule n
+
+proof_wanted multisetProd_eq_zero_of_card [Fintype σ] (s : Multiset (Zeon σ R)) (h : ∀ x ∈ s, scalar x = 0)
+    (h_card : Fintype.card σ < s.card) : s.prod = 0
+
 
 /-- Bulding up to `finite_nilpotent` -/
 
