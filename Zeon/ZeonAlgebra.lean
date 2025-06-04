@@ -1,4 +1,4 @@
-import Mathlib
+import mathlib
 import Zeon.Basis
 import Zeon.Inverse
 import Zeon.MinGradeProd
@@ -24,10 +24,11 @@ instance : Algebra R (Zeon σ R) :=
 
 variable {σ R}
 
- /-- The function that takes multivariate polynomials and returns the corresponding zeon -/
+/-- The algebra homomorphism that takes multivariate polynomials and returns the corresponding zeon -/
 def mk : MvPolynomial σ R →ₐ[R] Zeon σ R := Ideal.Quotient.mkₐ _ _
 
-lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] Zeon σ R) = Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} :=
+lemma ker_mk : RingHom.ker (mk : MvPolynomial σ R →ₐ[R] Zeon σ R) =
+    Ideal.span {(X i ^ 2 : MvPolynomial σ R) | (i : σ)} :=
   Ideal.Quotient.mkₐ_ker R _
 
 lemma mk_surjective : Function.Surjective (mk : MvPolynomial σ R → Zeon σ R) :=
@@ -100,10 +101,6 @@ lemma blade_mul (s t : Finset σ) :
   · rw [blade_mul_disjoint s t hst, if_pos hst]
   · rw [blade_mul_inter s t hst, if_neg hst]
 
-
-
-
-
 open Submodule Set
 
 /-- The blades span the algebra -/
@@ -147,17 +144,6 @@ lemma blade_span : span R (range (blade : Finset σ → Zeon σ R)) = ⊤ := by
   refine Algebra.adjoin_le ?_
   rintro - ⟨s, rfl⟩
   exact subset_span ⟨{s}, by simp [blade]⟩
-
-
-
-
-
-
-
-
-
-
-
 
 /-- Equivalence of finset and finitely supported set with values less than or equal to 1 -/
 @[simps] def Finset.finsuppEquiv : Finset σ ≃ {f : σ →₀ ℕ // ∀ x, f x ≤ 1} where
@@ -382,7 +368,6 @@ omit [DecidableEq σ] in
 lemma smul_blade_empty_mem_grade_zero (r : R) : r • ζ[R] (∅ : Finset σ) ∈ gradeSubmodule 0 := by
   apply Submodule.smul_mem
   simp [gradeSubmodule]
-  exact mem_span_singleton_self (ζ ∅) -- we should make this a `simp` lemma in Mathlib
 
 /-- relations between `scalar`, `basisBlades.coord ∅`, and the projection into the 0-grade submodule -/
 

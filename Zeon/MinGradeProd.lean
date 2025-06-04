@@ -1,39 +1,5 @@
 import mathlib
 
-lemma foo {F : Type} [Field F] (x : F) (hx : x ≠ 0) : x * x⁻¹ = 1 := by
-  simp [hx]
-
-lemma Finset.sum_congr_of_eq_on_inter {α β : Type*} {s₁ s₂ : Finset α} {f g : α → β}
-    [AddCommMonoid β] [DecidableEq α] (h₁ : ∀ a ∈ s₁, a ∉ s₂ → f a = 0)
-    (h₂ : ∀ a ∈ s₂, a ∉ s₁ → g a = 0) (h : ∀ a ∈ s₁ ∩ s₂, f a = g a) :
-    ∑ a ∈ s₁, f a = ∑ a ∈ s₂, g a := by
-  conv_lhs => rw [← sdiff_union_inter s₁ s₂, sum_union_eq_right (by aesop)]
-  conv_rhs => rw [← sdiff_union_inter s₂ s₁, sum_union_eq_right (by aesop), inter_comm]
-  exact sum_congr rfl h
-
-open scoped DirectSum
-
-/-- The products of two functions `f g : α → β` over finite sets `s₁ s₂ : Finset α`
-are equal if the functions agree on `s₁ ∩ s₂`, `f = 1` and `g = 1` on the respective
-set differences. -/
-@[to_additive "The sum of two functions `f g : α → β` over finite sets `s₁ s₂ : Finset α`
-are equal if the functions agree on `s₁ ∩ s₂`, `f = 0` and `g = 0` on the respective
-set differences."]
-lemma Finset.prod_congr_of_eq_on_inter {α β : Type*} {s₁ s₂ : Finset α} {f g : α → β}
-    [CommMonoid β] [DecidableEq α] (h₁ : ∀ a ∈ s₁, a ∉ s₂ → f a = 1)
-    (h₂ : ∀ a ∈ s₂, a ∉ s₁ → g a = 1) (h : ∀ a ∈ s₁ ∩ s₂, f a = g a) :
-    ∏ a ∈ s₁, f a = ∏ a ∈ s₂, g a := by
-  conv_lhs => rw [← sdiff_union_inter s₁ s₂, prod_union_eq_right (by aesop)]
-  conv_rhs => rw [← sdiff_union_inter s₂ s₁, prod_union_eq_right (by aesop), inter_comm]
-  exact prod_congr rfl h
-
--- this is missing from the library and the existing `Finset.prod_to_list` is misnamed,
--- it should be `Finset.prod_map_toList` instead.
-@[to_additive (attr := simp)]
-theorem Finset.prod_toList {α : Type*} [CommMonoid α] (s : Finset α) :
-    s.toList.prod = ∏ x ∈ s, x := by
-  simpa using s.prod_to_list id
-
 namespace DirectSum
 
 section
@@ -44,7 +10,7 @@ variable [SetLike.GradedMonoid A] [(i : ι) → (x : A i) → Decidable (x ≠ 0
 
 theorem coe_mul_apply_eq_sum_antidiagonal (r r' : ⨁ i, A i) (n : ι) :
     (r * r') n = ∑ ij ∈ Finset.antidiagonal n, (r ij.1 : R) * r' ij.2 := by
-  simp_rw [coe_mul_apply_eq_dfinsupp_sum, DFinsupp.sum, ← Finset.sum_product']
+  simp_rw [coe_mul_apply_eq_dfinsuppSum, DFinsupp.sum, ← Finset.sum_product']
   refine Finset.sum_congr_of_eq_on_inter (by aesop) ?_ ?_
   all_goals aesop (erase simp not_and) (add simp not_and_or)
 
