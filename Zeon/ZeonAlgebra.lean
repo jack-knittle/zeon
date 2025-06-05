@@ -1,4 +1,4 @@
-import mathlib
+import Mathlib
 import Zeon.Basis
 import Zeon.Inverse
 import Zeon.MinGradeProd
@@ -62,7 +62,7 @@ lemma adjoin_generators : Algebra.adjoin R (Set.range (generator : σ → Zeon �
   exact mk_surjective
 
 /-- A product of distinct generators -/
-def blade (s : Finset σ) : Zeon σ R := ∏ i in s, generator (R := R) i
+def blade (s : Finset σ) : Zeon σ R := ∏ i ∈ s, generator (R := R) i
 
 /-- Blade with scalars in R -/
 notation "ζ[" R "]" => blade (R := R)
@@ -452,7 +452,8 @@ lemma matrix_unit_iff_scalar_unit {n : Type*} [Fintype n] [DecidableEq n] (x : M
 lemma blade_coord_eq_zero (s t : Finset σ) (h : s ≠ t): (basisBlades (R := R).coord s) (ζ t) = 0 := by
   simp [blades_eq_basis_blades, Finsupp.single_eq_of_ne (id (Ne.symm h))]
 
-lemma blade_coord_sum_subs (s w v : Finset σ) (h : w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) =
+lemma blade_coord_sum_subs (s w v : Finset σ) (h : w ∈ s.powerset) : (∑ t ∈ s.powerset,
+  (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) =
   (basisBlades (R := R).coord w) (ζ w) * (basisBlades.coord (s \ w)) (ζ v) := by
   rw [←zero_add ((basisBlades.coord w) (ζ w) * (basisBlades.coord (s \ w)) (ζ v)), ←Finset.sum_erase_add (a := w) (h := h)]
   congr
@@ -461,7 +462,8 @@ lemma blade_coord_sum_subs (s w v : Finset σ) (h : w ∈ s.powerset) : (∑ t i
   rw [Finset.mem_erase] at hx
   simp [blade_coord_eq_zero _ _ hx.left]
 
-lemma blade_coord_sum_nsubs (s w v : Finset σ) (h : ¬w ∈ s.powerset) : (∑ t in s.powerset, (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) = 0 := by
+lemma blade_coord_sum_nsubs (s w v : Finset σ) (h : ¬w ∈ s.powerset) : (∑ t ∈ s.powerset,
+  (basisBlades (R := R).coord t) (ζ w) * (basisBlades.coord (s \ t)) (ζ v)) = 0 := by
   apply Finset.sum_eq_zero
   intro x hx
   simp [blade_coord_eq_zero (h := ne_of_mem_of_not_mem hx h)]

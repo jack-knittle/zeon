@@ -8,7 +8,7 @@ lemma foo {F : Type} [Field F] (x : F) (hx : x ≠ 0) : x * x⁻¹ = 1 := by
 variable {R : Type*} [CommRing R] (r : Rˣ) (d : R)
 
  /-- General formula to help build the inverse of a nilpotent thing and an invertible thing -/
-lemma inv_build (k : ℕ) : (r + d) * (∑ i in Finset.range k, (-1 : R) ^ i * (r⁻¹) ^ (i + 1) * d ^ i)
+lemma inv_build (k : ℕ) : (r + d) * (∑ i ∈ Finset.range k, (-1 : R) ^ i * (r⁻¹) ^ (i + 1) * d ^ i)
   = 1 + (-1) ^ (k + 1) * (r⁻¹) ^ k * d ^ k := by
   -- using k + 1 as the power on -1 instead of k - 1 to avoid natural number issues
 
@@ -26,7 +26,7 @@ lemma inv_build (k : ℕ) : (r + d) * (∑ i in Finset.range k, (-1 : R) ^ i * (
 @[simps]
 def Units.add_nilpotent (hd : IsNilpotent d) : Rˣ where
   val := r + d
-  inv := (∑ i in Finset.range (nilpotencyClass d), (-1 : R) ^ i * (r⁻¹) ^ (i + 1) * d ^ i)
+  inv := (∑ i ∈ Finset.range (nilpotencyClass d), (-1 : R) ^ i * (r⁻¹) ^ (i + 1) * d ^ i)
   val_inv := by simp [inv_build, pow_nilpotencyClass hd]
   inv_val := by
     rw [mul_comm]
